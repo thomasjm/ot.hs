@@ -52,15 +52,32 @@ invertOperation = undefined
 
 -- https://github.com/josephg/ShareJS/blob/master/lib/types/json-api.js
 
+{a: [1, 0, {b: {}}]}
+
+insert(["a", 0], 'qasdlkfasdfkljasdflkja') -> {a: ['q', 1, 0, {b: {}}]}
+
+set(["a", 2, "bkasdflkasdlkfjasdflkjasdflkj"], {})
+
+data JSONOperation = Get Path
+  | Set Path
+  | ...
+
+
+instance OTOperation JSONOperation where
+  transform (Set path) (Set path) = undefined
+
+--
+-- set(path, value)
+-- remove(path, len)
+-- insert(path, value)
+-- move(path, from, to)
+-- push(path, value)
+-- add(path, amount)
+-- deleteText(path, length, pos)
+
+-- Misc:
 -- get(path)
--- set(path, value, cb)
--- remove(path, len, cb)
--- insert(path, value, cb)
--- move(path, from, to, cb)
--- push(path, value, cb)
--- add(path, amount, cb)
 -- getLength(path) -- just does this.get(path).length
--- deleteText(path, length, pos, cb)
 -- hmm, why isn't there insertText?
 --
 --
