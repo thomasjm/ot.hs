@@ -6,11 +6,11 @@ module Control.OperationalTransformation.Text.Gen
   , genOperation
   ) where
 
-import Control.OperationalTransformation.Text
 import Control.OperationalTransformation.Properties (ArbitraryFor (..))
-import Test.QuickCheck hiding (Result)
+import Control.OperationalTransformation.Text
 import qualified Data.Text as T
-import Control.Applicative ((<$>))
+import Test.QuickCheck hiding (Result)
+
 import Data.Monoid ((<>))
 
 genOperation' :: Int -> Gen TextOperation

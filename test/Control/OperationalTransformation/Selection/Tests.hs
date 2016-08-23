@@ -5,17 +5,15 @@
 module Control.OperationalTransformation.Selection.Tests (tests) where
 
 import Control.OperationalTransformation
-import Control.OperationalTransformation.Text
 import Control.OperationalTransformation.Selection
-import Test.Framework
-import Test.QuickCheck
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.HUnit hiding (Test)
-import Test.Framework.Providers.HUnit (testCase)
-import Control.Applicative
---import Data.Aeson
+import Control.OperationalTransformation.Text
 import Data.Aeson.Types hiding (Result)
 import Data.Monoid
+import Test.HUnit hiding (Test)
+import Test.QuickCheck
+import Test.Tasty
+import Test.Tasty.HUnit (testCase)
+import Test.Tasty.QuickCheck (testProperty)
 
 instance Arbitrary Range where
   arbitrary = Range <$> (abs <$> arbitrary) <*> (abs <$> arbitrary)
@@ -53,7 +51,7 @@ prop_sizeZero_notSomethingSelected :: Selection -> Bool
 prop_sizeZero_notSomethingSelected sel =
   (size sel /= 0) == (somethingSelected sel)
 
-tests :: Test
+tests :: TestTree
 tests = testGroup "Control.OperationalTransformation.Selection"
   [ testProperty "prop_json_id" prop_json_id
   , testCase "testUpdateRange" testUpdateRange

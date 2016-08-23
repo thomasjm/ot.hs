@@ -22,7 +22,7 @@ module Control.OperationalTransformation.Properties
 import Control.OperationalTransformation
 import Test.QuickCheck hiding (Result, reason)
 import Test.QuickCheck.Property
-import Control.Applicative ((<$>), (<*>))
+
 
 {-
 type ArbitraryOTSystem doc op =

@@ -12,12 +12,12 @@ module Control.OperationalTransformation.Text
 
 import Control.OperationalTransformation
 import qualified Data.Text as T
-import Data.Monoid (mappend)
+
 import Data.Aeson (Value (..), FromJSON (..), ToJSON (..))
 import Data.Binary (Binary (..), putWord8, getWord8)
 import Data.Typeable (Typeable)
 import Data.Text (pack, unpack)
-import Control.Applicative ((<$>))
+
 #if MIN_VERSION_ghc(7,8,0)
 import GHC.Exts (IsList (..))
 #endif
