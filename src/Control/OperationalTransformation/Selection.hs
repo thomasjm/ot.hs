@@ -12,8 +12,6 @@ module Control.OperationalTransformation.Selection
 import Control.OperationalTransformation
 import Control.OperationalTransformation.Text
 import Data.Aeson
-import Control.Applicative
-import Data.Monoid
 import Data.List (sort)
 import qualified Data.Text as T
 #if MIN_VERSION_ghc(7,8,0)

@@ -5,20 +5,16 @@ module Control.OperationalTransformation.Text.Tests
   ) where
 
 import Control.OperationalTransformation
-import Control.OperationalTransformation.Text
 import Control.OperationalTransformation.Properties
-
+import Control.OperationalTransformation.Text
 import Control.OperationalTransformation.Text.Gen
-
+import Data.Aeson.Types hiding (Result)
+import Data.Binary (encode, decode)
+import qualified Data.Text as T
 import Test.QuickCheck hiding (Result)
 import Test.QuickCheck.Property
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-
-import qualified Data.Text as T
-import Data.Binary (encode, decode)
-import Control.Applicative ((<$>), (<*>))
-import Data.Aeson.Types hiding (Result)
+import Test.Tasty
+import Test.Tasty.QuickCheck (testProperty)
 
 deltaLength :: TextOperation -> Int
 deltaLength (TextOperation ops) = sum (map len ops)
@@ -82,7 +78,7 @@ prop_invert doc = do
       Left _ -> False
       Right doc2 -> doc2 == doc
 
-tests :: Test
+tests :: TestTree
 tests = testGroup "Control.OperationalTransformation.Text.Tests"
   [ testProperty "prop_json_id" prop_json_id
   , testProperty "prop_binary_id" prop_binary_id

@@ -7,14 +7,12 @@ module Control.OperationalTransformation.ClientServerTests
 import Control.OperationalTransformation
 import Control.OperationalTransformation.Client
 import Control.OperationalTransformation.Server
-import Data.Maybe (fromJust)
-
 import Control.OperationalTransformation.Text.Gen (genOperation)
-
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
+import Data.Maybe (fromJust)
 import Test.QuickCheck hiding (reason)
 import Test.QuickCheck.Property
+import Test.Tasty
+import Test.Tasty.QuickCheck hiding (reason)
 
 type Queue a = [a]
 
@@ -136,7 +134,7 @@ prop_client_server genOp = property $ do
       ClientSynchronized -> True
       _ -> False
 
-tests :: Test
+tests :: TestTree
 tests = testGroup "Control.OperationalTransformation.ClientServerTests"
   [ testProperty "prop_client_server" $ prop_client_server genOperation
   ]

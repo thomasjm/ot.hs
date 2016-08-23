@@ -1,5 +1,5 @@
 flags: {}
 packages:
 - '.'
-extra-deps: []
+extra-deps: ["hspec-test-framework-0.1.0", "hspec-test-framework-th-0.1.0"]
 resolver: lts-3.9
