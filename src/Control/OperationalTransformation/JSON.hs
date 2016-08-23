@@ -7,7 +7,9 @@ module Control.OperationalTransformation.JSON
   , invertOperation
   ) where
 
+import Control.OperationalTransformation
 import Data.Aeson
+import qualified Data.Aeson as A
 import Data.Text
 
 type Property = Text
@@ -16,64 +18,40 @@ data PathSegment = Prop Property | Pos Position
                  deriving Show
 type Path = [PathSegment]
 
--- This is some random code I found on the internet
--- data JSONNumberOperation = Add Path Int
---                          deriving Show
-
--- data JSONStringOperation = StringInsert Path Position Text
---                          | StringDelete Path Position Text
---                          deriving Show
-
--- data JSONArrayOperation = ArrayInsert Path Position Value
---                         | ArrayDelete Path Position Value
---                         | ArrayReplace Path Position Value Value
---                         | ArrayMove Path Position Int
---                         deriving Show
-
--- data JSONObjectOperation = Insert Path Property Value
---                          | Delete Path Property
---                          | Replace Path Property Value Value
---                          deriving Show
 
 instance FromJSON PathSegment where
   parseJSON (String a) = Prop <$> parseJSON (String a)
   parseJSON (Number a) = Pos  <$> parseJSON (Number a)
   parseJSON _ = fail "Invalid Pathsegment"
 
--- instance FromJSON JSONNumberOperation where
---   parseJSON (Object v) = Add <$> (v .: "p") <*> (v .: "na")
---   parseJSON _          = fail "Not an Object"
-
-
-data JSONOperation = JSONOperation
 
 invertOperation = undefined
 
-
 -- https://github.com/josephg/ShareJS/blob/master/lib/types/json-api.js
 
-{a: [1, 0, {b: {}}]}
+-- {a: [1, 0, {b: {}}]}
 
-insert(["a", 0], 'qasdlkfasdfkljasdflkja') -> {a: ['q', 1, 0, {b: {}}]}
+-- insert(["a", 0], 'qasdlkfasdfkljasdflkja') -> {a: ['q', 1, 0, {b: {}}]}
 
-set(["a", 2, "bkasdflkasdlkfjasdflkjasdflkj"], {})
+-- set(["a", 2, "bkasdflkasdlkfjasdflkjasdflkj"], {})
 
-data JSONOperation = Get Path
+newtype Length = Length Int
+newtype Index = Index Int
+
+
+data JSONOperation =
+  Get Path
   | Set Path
-  | ...
+  | Remove Path Int
+  | Insert Path A.Value
+  | Move Path Path Path -- ???
+  | Add Path Int
+  | DeleteText Path Length Index
 
 
 instance OTOperation JSONOperation where
-  transform (Set path) (Set path) = undefined
+  transform (Set path1) (Set path2) = undefined
 
---
--- set(path, value)
--- remove(path, len)
--- insert(path, value)
--- move(path, from, to)
--- push(path, value)
--- add(path, amount)
--- deleteText(path, length, pos)
 
 -- Misc:
 -- get(path)
