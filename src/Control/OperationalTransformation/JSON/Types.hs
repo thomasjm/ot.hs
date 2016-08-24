@@ -65,6 +65,9 @@ data JSONOperation
   | DeleteString Path Int T.Text
 
 
+instance ToJSON JSONOperation where
+  toJSON = undefined
+
 instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "na" `elem` (HM.elems v) = Add <$> v .: "p" <*> v .: "na"
 
