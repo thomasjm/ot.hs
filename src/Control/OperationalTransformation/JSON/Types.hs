@@ -11,7 +11,7 @@ import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
-import Data.String.Interpolate.IsString
+-- import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
 
@@ -83,7 +83,7 @@ instance ToJSON JSONOperation where
   toJSON (ObjectInsert path key value) = object [] -- [("p", toJSON [(path, key)]), ("oi", A.object value)]
   toJSON (ObjectDelete path key value)    = object []
   toJSON (ObjectReplace path key old new) = object []
-  toJSON (ApplySubtypeOperation path op)  = object []
+  toJSON (ApplySubtypeOperation path t op)  = object []
   toJSON (InsertString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
   toJSON (DeleteString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("sd", A.String s)]
 
