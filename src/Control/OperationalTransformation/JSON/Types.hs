@@ -1,6 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
 
-module Control.OperationalTransformation.JSON.Types where
+module Control.OperationalTransformation.JSON.Types
+( JSONOperation(..)
+) where
 
 import Control.OperationalTransformation.Text (TextOperation)
 import Data.Aeson
@@ -11,7 +13,11 @@ import qualified Data.Text as T
 
 -- * PathSegment and Path
 
-data PathSegment = Prop T.Text | Pos Int deriving Show
+data PathSegment
+  = Prop T.Text
+  | Pos Int
+  deriving Show
+
 type Path = [PathSegment]
 
 instance FromJSON PathSegment where
@@ -23,11 +29,11 @@ instance FromJSON PathSegment where
 
 -- Based on the "Summary of operations" at https://github.com/ottypes/json0
 -- See also https://github.com/josephg/ShareJS/blob/master/lib/types/json-api.js
-data JSONOperation =
+data JSONOperation
   -- * Numbers
 
   -- adds the number to the number at [path]
-  Add Path Int
+  = Add Path Int
 
   -- * Lists
 
