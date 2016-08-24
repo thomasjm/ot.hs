@@ -6,7 +6,7 @@ module Control.OperationalTransformation.JSON.Types
   , PathSegment(..)
 ) where
 
-import Control.OperationalTransformation.Text (TextOperation)
+-- import Control.OperationalTransformation.Text (TextOperation)
 import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
@@ -66,7 +66,7 @@ data JSONOperation
   -- * Subtypes
 
   -- applies the subtype op o of type t to the object at [path]
-  | ApplySubtypeOperation Path TextOperation
+  | ApplySubtypeOperation Path T.Text A.Value
   -- inserts the string s at offset offset into the string at [path] (uses subtypes internally)
   | InsertString Path Int T.Text
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
@@ -125,7 +125,7 @@ instance FromJSON JSONOperation where
                              return $ ObjectDelete path prop obj
 
   -- Subtypes
-  parseJSON (A.Object v) | "o" `elem` (HM.keys v) = ApplySubtypeOperation <$> v .: "p" <*> v .: "o"
+  parseJSON (A.Object v) | "o" `elem` (HM.keys v) = ApplySubtypeOperation <$> v .: "p" <*> v .: "t" <*> v .: "o"
   parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "si"

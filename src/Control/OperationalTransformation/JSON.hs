@@ -33,7 +33,18 @@ instance OTOperation JSONOperation where
                                                                                  (beginning, rest) = splitAt ((length listPath) + 1) path
                                                                                  listPos@(Pos x) = last beginning
                                                                                  path' = (init beginning) ++ [inc listPos] ++ rest
-  transform op1@(InsertString path pos s) op2@(ListInsert listPath pos2 val) = Right (op1, op2)
+  transform op1@(InsertString {}) op2@(ListInsert listPath pos2 val) = Right (op1, op2)
+
+
+  -- An ApplySubtypeOperation is just like an insertString
+  transform op1@(ApplySubtypeOperation path t op) op2@(ListInsert listPath pos2 val) | ((listPath `isPrefixOf` path) && (x >= pos2)) = Right (ApplySubtypeOperation path' t op, op2) where
+                                                                                         (beginning, rest) = splitAt ((length listPath) + 1) path
+                                                                                         listPos@(Pos x) = last beginning
+                                                                                         path' = (init beginning) ++ [inc listPos] ++ rest
+  transform op1@(ApplySubtypeOperation {}) op2@(ListInsert listPath pos2 val) = Right (op1, op2)
+
+
+
 
 
   transform op1@(ListInsert {}) op2@(InsertString {}) = rev <$> transform op2 op1
@@ -46,7 +57,7 @@ instance OTOperation JSONOperation where
   transform (Add aPath aOperand) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (Add aPath aOperand) (ObjectDelete odPath odKey odValue) = undefined
   transform (Add aPath aOperand) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (Add aPath aOperand) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (Add aPath aOperand) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (Add aPath aOperand) (InsertString isPath isI isStr) = undefined
   transform (Add aPath aOperand) (DeleteString dsPath dsI dsStr) = undefined
   transform (ListInsert liPath liI liValue) (Add aPath aOperand) = undefined
@@ -57,7 +68,7 @@ instance OTOperation JSONOperation where
   transform (ListInsert liPath liI liValue) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ListInsert liPath liI liValue) (ObjectDelete odPath odKey odValue) = undefined
   transform (ListInsert liPath liI liValue) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ListInsert liPath liI liValue) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ListInsert liPath liI liValue) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ListInsert liPath liI liValue) (InsertString isPath isI isStr) = undefined
   transform (ListInsert liPath liI liValue) (DeleteString dsPath dsI dsStr) = undefined
   transform (ListDelete ldPath ldI ldValue) (Add aPath aOperand) = undefined
@@ -68,7 +79,7 @@ instance OTOperation JSONOperation where
   transform (ListDelete ldPath ldI ldValue) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ListDelete ldPath ldI ldValue) (ObjectDelete odPath odKey odValue) = undefined
   transform (ListDelete ldPath ldI ldValue) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ListDelete ldPath ldI ldValue) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ListDelete ldPath ldI ldValue) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ListDelete ldPath ldI ldValue) (InsertString isPath isI isStr) = undefined
   transform (ListDelete ldPath ldI ldValue) (DeleteString dsPath dsI dsStr) = undefined
   transform (ListReplace lrPath lrI lrOld lrNew) (Add aPath aOperand) = undefined
@@ -79,7 +90,7 @@ instance OTOperation JSONOperation where
   transform (ListReplace lrPath lrI lrOld lrNew) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ListReplace lrPath lrI lrOld lrNew) (ObjectDelete odPath odKey odValue) = undefined
   transform (ListReplace lrPath lrI lrOld lrNew) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ListReplace lrPath lrI lrOld lrNew) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ListReplace lrPath lrI lrOld lrNew) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ListReplace lrPath lrI lrOld lrNew) (InsertString isPath isI isStr) = undefined
   transform (ListReplace lrPath lrI lrOld lrNew) (DeleteString dsPath dsI dsStr) = undefined
   transform (ListMove lmPath lmSrc lmDst) (Add aPath aOperand) = undefined
@@ -90,7 +101,7 @@ instance OTOperation JSONOperation where
   transform (ListMove lmPath lmSrc lmDst) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ListMove lmPath lmSrc lmDst) (ObjectDelete odPath odKey odValue) = undefined
   transform (ListMove lmPath lmSrc lmDst) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ListMove lmPath lmSrc lmDst) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ListMove lmPath lmSrc lmDst) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ListMove lmPath lmSrc lmDst) (InsertString isPath isI isStr) = undefined
   transform (ListMove lmPath lmSrc lmDst) (DeleteString dsPath dsI dsStr) = undefined
   transform (ObjectInsert oiPath oiKey oiValue) (Add aPath aOperand) = undefined
@@ -101,7 +112,7 @@ instance OTOperation JSONOperation where
   transform (ObjectInsert path1 key1 value1) (ObjectInsert path2 key2 value2) = undefined
   transform (ObjectInsert oiPath oiKey oiValue) (ObjectDelete odPath odKey odValue) = undefined
   transform (ObjectInsert oiPath oiKey oiValue) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ObjectInsert oiPath oiKey oiValue) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ObjectInsert oiPath oiKey oiValue) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ObjectInsert oiPath oiKey oiValue) (InsertString isPath isI isStr) = undefined
   transform (ObjectInsert oiPath oiKey oiValue) (DeleteString dsPath dsI dsStr) = undefined
   transform (ObjectDelete odPath odKey odValue) (Add aPath aOperand) = undefined
@@ -112,7 +123,7 @@ instance OTOperation JSONOperation where
   transform (ObjectDelete odPath odKey odValue) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ObjectDelete path1 key1 value1) (ObjectDelete path2 key2 value2) = undefined
   transform (ObjectDelete odPath odKey odValue) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ObjectDelete odPath odKey odValue) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ObjectDelete odPath odKey odValue) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ObjectDelete odPath odKey odValue) (InsertString isPath isI isStr) = undefined
   transform (ObjectDelete odPath odKey odValue) (DeleteString dsPath dsI dsStr) = undefined
   transform (ObjectReplace orPath orKey orOld orNew) (Add aPath aOperand) = undefined
@@ -123,20 +134,20 @@ instance OTOperation JSONOperation where
   transform (ObjectReplace orPath orKey orOld orNew) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (ObjectReplace orPath orKey orOld orNew) (ObjectDelete odPath odKey odValue) = undefined
   transform (ObjectReplace path1 key1 old1 new1) (ObjectReplace path2 key2 old2 new2) = undefined
-  transform (ObjectReplace orPath orKey orOld orNew) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (ObjectReplace orPath orKey orOld orNew) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (ObjectReplace orPath orKey orOld orNew) (InsertString isPath isI isStr) = undefined
   transform (ObjectReplace orPath orKey orOld orNew) (DeleteString dsPath dsI dsStr) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (Add aPath aOperand) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ListInsert liPath liI liValue) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ListDelete ldPath ldI ldValue) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ListReplace lrPath lrI lrOld lrNew) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ListMove lmPath lmSrc lmDst) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ObjectInsert oiPath oiKey oiValue) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ObjectDelete odPath odKey odValue) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (ApplySubtypeOperation path1 op1) (ApplySubtypeOperation path2 op2) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (InsertString isPath isI isStr) = undefined
-  transform (ApplySubtypeOperation asoPath asoOp) (DeleteString dsPath dsI dsStr) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (Add aPath aOperand) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ListInsert liPath liI liValue) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ListDelete ldPath ldI ldValue) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ListReplace lrPath lrI lrOld lrNew) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ListMove lmPath lmSrc lmDst) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ObjectInsert oiPath oiKey oiValue) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ObjectDelete odPath odKey odValue) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (ObjectReplace orPath orKey orOld orNew) = undefined
+  -- transform (ApplySubtypeOperation path1 op1) (ApplySubtypeOperation path2 op2) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (InsertString isPath isI isStr) = undefined
+  -- transform (ApplySubtypeOperation asoPath asoOp) (DeleteString dsPath dsI dsStr) = undefined
   transform (InsertString isPath isI isStr) (Add aPath aOperand) = undefined
   transform (InsertString isPath isI isStr) (ListDelete ldPath ldI ldValue) = undefined
   transform (InsertString isPath isI isStr) (ListReplace lrPath lrI lrOld lrNew) = undefined
@@ -144,7 +155,7 @@ instance OTOperation JSONOperation where
   transform (InsertString isPath isI isStr) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (InsertString isPath isI isStr) (ObjectDelete odPath odKey odValue) = undefined
   transform (InsertString isPath isI isStr) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (InsertString isPath isI isStr) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (InsertString isPath isI isStr) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (InsertString path1 i1 str1) (InsertString path2 i2 str2) = undefined
   transform (InsertString isPath isI isStr) (DeleteString dsPath dsI dsStr) = undefined
   transform (DeleteString dsPath dsI dsStr) (Add aPath aOperand) = undefined
@@ -155,6 +166,6 @@ instance OTOperation JSONOperation where
   transform (DeleteString dsPath dsI dsStr) (ObjectInsert oiPath oiKey oiValue) = undefined
   transform (DeleteString dsPath dsI dsStr) (ObjectDelete odPath odKey odValue) = undefined
   transform (DeleteString dsPath dsI dsStr) (ObjectReplace orPath orKey orOld orNew) = undefined
-  transform (DeleteString dsPath dsI dsStr) (ApplySubtypeOperation asoPath asoOp) = undefined
+  -- transform (DeleteString dsPath dsI dsStr) (ApplySubtypeOperation asoPath asoOp) = undefined
   transform (DeleteString dsPath dsI dsStr) (InsertString isPath isI isStr) = undefined
   transform (DeleteString path1 i1 str1) (DeleteString path2 i2 str2) = undefined
