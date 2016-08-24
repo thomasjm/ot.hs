@@ -6,6 +6,7 @@ module Control.OperationalTransformation.JSON.Specs where
 import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
+import Control.OperationalTransformation.JSON.Util
 import Data.Aeson as A
 import Test.Hspec
 import Test.Tasty
@@ -22,7 +23,10 @@ transform val1 val2 = (toJSON op1', toJSON op2')
   where
     Success (op1 :: JSONOperation) = fromJSON val1
     Success (op2 :: JSONOperation) = fromJSON val2
-    Right (op1', op2') = C.transform op1 op2
+    (op1', op2') = case C.transform op1 op2 of
+      Left err -> error err
+      Right x -> x
+
 
 -- Just for REPL testing
 transform' :: A.Value -> A.Value -> (JSONOperation, JSONOperation)
@@ -66,6 +70,7 @@ specs = do
      --    -- t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
      --    t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
      --    shouldBe True True
+
   -- describe "number" $ do
   --   it "Adds a number" $ do
   --     shouldBe 3, type.apply 1, [{p:[], na:2}]
@@ -166,26 +171,27 @@ specs = do
       shouldBe [j|{p:[1], t:"text0", o:[{p:201, i:"hi"}]}|] (transformRight [j|{p:[0], t:"text0", o:[{p:201, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
       shouldBe [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] [j|{p:[1], li:"x"}|])
 
-      -- shouldBe [j|{p:[0, 203], si:"hi"}|] (transformLeft [j|{p:[1, 203], si:"hi"}|] [j|{p:[0], ld:"x"}|])
-      -- shouldBe [j|{p:[0, 204], si:"hi"}|] (transformLeft [j|{p:[0, 204], si:"hi"}|] [j|{p:[1], ld:"x"}|])
+      shouldBe [j|{p:[0, 203], si:"hi"}|] (transformLeft [j|{p:[1, 203], si:"hi"}|] [j|{p:[0], ld:"x"}|])
+      shouldBe [j|{p:[0, 204], si:"hi"}|] (transformLeft [j|{p:[0, 204], si:"hi"}|] [j|{p:[1], ld:"x"}|])
       shouldBe [j|{p:["x",3], si: "hi"}|] (transformLeft [j|{p:["x",3], si:"hi"}|] [j|{p:["x",0,"x"], li:0}|])
 
       -- TODO: these seem to contain invalid string inserts -- the last element of the path is not a number
       -- shouldBe [j|{p:["x",3,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",5], li:0}|])
       -- shouldBe [j|{p:["x",4,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",0], li:0}|])
 
-      -- shouldBe [j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|] [j|{p:[0], ld:"x"}|])
-      -- shouldBe [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
-      shouldBe [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] (transformLeft [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] [j|{p:["x",0,"x"], li:0}|])
+      shouldBe [j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|] [j|{p:[0], ld:"x"}|])
+      shouldBe [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
+      -- shouldBe [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] (transformLeft [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] [j|{p:["x",0,"x"], li:0}|])
 
-        -- shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
-        -- shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
 
-        --     it "converts ops on deleted elements to noops" $ do
-        --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x"}], "left"
-        --       shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], ld:"x"}], "left"
-        --       shouldBe [{p:[0],li:"x"}], type.transform [{p:[0],li:"x"}], [{p:[0],ld:"y"}], "left"
-        --       shouldBe [], type.transform [{p:[0],na:-3}], [{p:[0],ld:48}], "left"
+      shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+      -- shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+
+    it "converts ops on deleted elements to noops" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:[1, 0], si:"hi"}|] [j|{p:[1], ld:"x"}|])
+      -- shouldBe [] (transformLeft [j|{p:[1], t:"text0", o:[j|{p:0, i:"hi"}|]}|] [j|{p:[1], ld:"x"}|])
+      -- shouldBe [j|{p:[0],li:"x"}|] (transformLeft [j|{p:[0],li:"x"}|] [j|{p:[0],ld:"y"}|])
+      -- shouldBe [] (transformLeft [j|{p:[0],na:-3}|] [j|{p:[0],ld:48}|])
 
         --     it "converts ops on replaced elements to noops" $ do
                --shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x", li:"y"}], "left"
