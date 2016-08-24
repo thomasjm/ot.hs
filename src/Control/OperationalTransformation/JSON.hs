@@ -28,11 +28,11 @@ instance OTOperation JSONOperation where
   -- An InsertString can't affect a ListInsert at all
   -- The only way a ListInsert can affect an InsertString is if the InsertString is at a point in the tree where it's
   -- in the list after the edited position (or the child of some such element)
-  transform op1@(InsertString path pos s) op2@(ListInsert path2 pos2 val) | ((path2 `isPrefixOf` path) && (x >= pos2)) = Right (InsertString path' pos s, op2) where
-                                                                              (beginning, rest) = splitAt (length path2) path
-                                                                              listPos@(Pos x) = last beginning
-                                                                              path' = (init beginning) ++ [inc listPos] ++ rest
-  transform op1@(InsertString path pos s) op2@(ListInsert path2 pos2 val) = Right (op1, op2)
+  transform op1@(InsertString path pos s) op2@(ListInsert listPath pos2 val) | ((listPath `isPrefixOf` path) && (x >= pos2)) = Right (InsertString path' pos s, op2) where
+                                                                                 (beginning, rest) = splitAt ((length listPath) + 1) path
+                                                                                 listPos@(Pos x) = last beginning
+                                                                                 path' = (init beginning) ++ [inc listPos] ++ rest
+  transform op1@(InsertString path pos s) op2@(ListInsert listPath pos2 val) = Right (op1, op2)
 
 
   transform (Add path1 operand1) (Add path2 operand2) = undefined

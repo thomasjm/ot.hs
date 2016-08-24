@@ -8,6 +8,8 @@ import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
 import Test.Hspec
+import Test.Tasty
+import Test.Tasty.Hspec
 
 -- These tests are taken directly from
 -- https://github.com/ottypes/json0/blob/master/test/json0.coffee
@@ -408,3 +410,7 @@ specs = do
   --   it "An attempt to re-delete a key becomes a no-op" $ do
   --     shouldBe [], type.transform [{p:["k"], od:"x"}], [{p:["k"], od:"x"}], "left"
   --     shouldBe [], type.transform [{p:["k"], od:"x"}], [{p:["k"], od:"x"}], "right"
+
+
+main :: IO ()
+main = (testSpec "JSON specs" specs) >>= defaultMain

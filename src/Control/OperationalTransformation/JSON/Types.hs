@@ -28,6 +28,10 @@ instance FromJSON PathSegment where
   parseJSON (Number x) = return $ Pos $ round x
   parseJSON _ = fail "Invalid Pathsegment"
 
+instance ToJSON PathSegment where
+  toJSON (Pos x) = A.Number $ fromIntegral x
+  toJSON (Prop x) = A.String x
+
 -- * JSONOperation
 
 -- Based on the "Summary of operations" at https://github.com/ottypes/json0
@@ -70,7 +74,7 @@ data JSONOperation
   deriving (Eq, Show)
 
 instance ToJSON JSONOperation where
-  toJSON (Add a b) = undefined
+  toJSON (InsertString path pos s) = A.Object $ HM.fromList [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
 
 instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
