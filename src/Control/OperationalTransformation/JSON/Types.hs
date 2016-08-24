@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables, OverloadedStrings, QuasiQuotes #-}
 
 module Control.OperationalTransformation.JSON.Types
 ( JSONOperation(..)
@@ -11,8 +11,9 @@ import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
+import Data.String.Interpolate.IsString
 import qualified Data.Text as T
--- import Debug.Trace
+
 
 -- * PathSegment and Path
 
@@ -75,6 +76,7 @@ data JSONOperation
 
 instance ToJSON JSONOperation where
   toJSON (InsertString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
+  toJSON x = error [i|Unimplemented toJSON: #{x}|]
   -- toJSON (Add path operand)               = object []
   -- toJSON (ListInsert path i value)        = object []
   -- toJSON (ListDelete path i value)        = object []
