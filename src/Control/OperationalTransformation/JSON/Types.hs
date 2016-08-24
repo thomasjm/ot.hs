@@ -11,7 +11,7 @@ import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
--- import Data.String.Interpolate.IsString
+--import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
 
@@ -76,16 +76,16 @@ data JSONOperation
 
 instance ToJSON JSONOperation where
   toJSON (Add path operand) = object [("p", toJSON path), ("na", A.Number $ fromIntegral operand)]
-  toJSON (ListInsert path i value)        = object []
-  toJSON (ListDelete path i value)        = object []
-  toJSON (ListReplace path i old new)     = object []
-  toJSON (ListMove path src dst)          = object []
-  toJSON (ObjectInsert path key value) = object [] -- [("p", toJSON [(path, key)]), ("oi", A.object value)]
-  toJSON (ObjectDelete path key value)    = object []
-  toJSON (ObjectReplace path key old new) = object []
-  toJSON (ApplySubtypeOperation path t op)  = object []
-  toJSON (InsertString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
-  toJSON (DeleteString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("sd", A.String s)]
+  toJSON (ListInsert path i value)    = object [("p", toJSON (path ++ [Pos i])), ("li", value)]
+  toJSON (ListDelete path i value)    = object [("p", toJSON (path ++ [Pos i])), ("ld", value)]
+  toJSON (ListReplace path i old new) = object [("p", toJSON (path ++ [Pos i])), ("ld", old), ("li", new)]
+  toJSON (ListMove path src dst) = object [("p", toJSON (path ++ [Pos src])), ("lm", toJSON (Pos dst))]
+  toJSON (ObjectInsert path key value)    = object [("p", toJSON (path ++ [Prop key])), ("oi", value)]
+  toJSON (ObjectDelete path key value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
+  toJSON (ObjectReplace path key old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
+  toJSON (ApplySubtypeOperation path t op) = object [("p", toJSON path), ("t", A.String t), ("o", op)]
+  toJSON (InsertString path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
+  toJSON (DeleteString path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
 
 instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
