@@ -12,6 +12,13 @@ import Test.Hspec
 compose = undefined
 transform = undefined
 
+-- TODO: these might be backwards, not sure yet
+transformLeft a b = a'
+  where (a', b') = transform a b
+transformRight a b = b'
+  where (a', b') = transform a b
+
+
 specs = do
   describe "sanity" $ do
     describe "#compose()" $ do
@@ -127,26 +134,26 @@ specs = do
   --       shouldBe [], type.compose [], [{p:["x","y",0],lm:0}]
   --     ###
 
-  --   describe "#transform()" $ do
-  --     it "bumps paths when list elements are inserted or removed" $ do
-  --       shouldBe [{p:[2, 200], si:"hi"}], type.transform [{p:[1, 200], si:"hi"}], [{p:[0], li:"x"}], "left"
-  --       shouldBe [{p:[1, 201], si:"hi"}], type.transform [{p:[0, 201], si:"hi"}], [{p:[0], li:"x"}], "right"
-  --       shouldBe [{p:[0, 202], si:"hi"}], type.transform [{p:[0, 202], si:"hi"}], [{p:[1], li:"x"}], "left"
-  --       shouldBe [{p:[2], t:"text0", o:[{p:200, i:"hi"}]}], type.transform [{p:[1], t:"text0", o:[{p:200, i:"hi"}]}], [{p:[0], li:"x"}], "left"
-  --       shouldBe [{p:[1], t:"text0", o:[{p:201, i:"hi"}]}], type.transform [{p:[0], t:"text0", o:[{p:201, i:"hi"}]}], [{p:[0], li:"x"}], "right"
-  --       shouldBe [{p:[0], t:"text0", o:[{p:202, i:"hi"}]}], type.transform [{p:[0], t:"text0", o:[{p:202, i:"hi"}]}], [{p:[1], li:"x"}], "left"
+    describe "#transform()" $ do
+      it "bumps paths when list elements are inserted or removed" $ do
+        shouldBe [[j|{p:[2, 200], si:"hi"}|]] (transformLeft [[j|{p:[1, 200], si:"hi"}|]] [[j|{p:[0], li:"x"}|]])
+        shouldBe [[j|{p:[1, 201], si:"hi"}|]] (transformRight [[j|{p:[0, 201], si:"hi"}|]] [[j|{p:[0], li:"x"}|]])
+        shouldBe [[j|{p:[0, 202], si:"hi"}|]] (transformLeft [[j|{p:[0, 202], si:"hi"}|]] [[j|{p:[1], li:"x"}|]])
+        shouldBe [[j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|]] (transformLeft [[j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|]] [[j|{p:[0], li:"x"}|]])
+        shouldBe [[j|{p:[1], t:"text0", o:[{p:201, i:"hi"}]}|]] (transformRight [[j|{p:[0], t:"text0", o:[{p:201, i:"hi"}]}|]] [[j|{p:[0], li:"x"}|]])
+        shouldBe [[j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|]] (transformLeft [[j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|]] [[j|{p:[1], li:"x"}|]])
 
-  --       shouldBe [{p:[0, 203], si:"hi"}], type.transform [{p:[1, 203], si:"hi"}], [{p:[0], ld:"x"}], "left"
-  --       shouldBe [{p:[0, 204], si:"hi"}], type.transform [{p:[0, 204], si:"hi"}], [{p:[1], ld:"x"}], "left"
-  --       shouldBe [{p:["x",3], si: "hi"}], type.transform [{p:["x",3], si:"hi"}], [{p:["x",0,"x"], li:0}], "left"
-  --       shouldBe [{p:["x",3,"x"], si: "hi"}], type.transform [{p:["x",3,"x"], si:"hi"}], [{p:["x",5], li:0}], "left"
-  --       shouldBe [{p:["x",4,"x"], si: "hi"}], type.transform [{p:["x",3,"x"], si:"hi"}], [{p:["x",0], li:0}], "left"
-  --       shouldBe [{p:[0], t:"text0", o:[{p:203, i:"hi"}]}], type.transform [{p:[1], t:"text0", o:[{p:203, i:"hi"}]}], [{p:[0], ld:"x"}], "left"
-  --       shouldBe [{p:[0], t:"text0", o:[{p:204, i:"hi"}]}], type.transform [{p:[0], t:"text0", o:[{p:204, i:"hi"}]}], [{p:[1], ld:"x"}], "left"
-  --       shouldBe [{p:["x"], t:"text0", o:[{p:3,i: "hi"}]}], type.transform [{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}], [{p:["x",0,"x"], li:0}], "left"
+        shouldBe [[j|{p:[0, 203], si:"hi"}|]] (transformLeft [[j|{p:[1, 203], si:"hi"}|]] [[j|{p:[0], ld:"x"}|]])
+        shouldBe [[j|{p:[0, 204], si:"hi"}|]] (transformLeft [[j|{p:[0, 204], si:"hi"}|]] [[j|{p:[1], ld:"x"}|]])
+        shouldBe [[j|{p:["x",3], si: "hi"}|]] (transformLeft [[j|{p:["x",3], si:"hi"}|]] [[j|{p:["x",0,"x"], li:0}|]])
+        shouldBe [[j|{p:["x",3,"x"], si: "hi"}|]] (transformLeft [[j|{p:["x",3,"x"], si:"hi"}|]] [[j|{p:["x",5], li:0}|]])
+        shouldBe [[j|{p:["x",4,"x"], si: "hi"}|]] (transformLeft [[j|{p:["x",3,"x"], si:"hi"}|]] [[j|{p:["x",0], li:0}|]])
+        shouldBe [[j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|]] (transformLeft [[j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|]] [[j|{p:[0], ld:"x"}|]])
+        shouldBe [[j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|]] (transformLeft [[j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|]] [[j|{p:[1], ld:"x"}|]])
+        shouldBe [[j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|]] (transformLeft [[j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|]] [[j|{p:["x",0,"x"], li:0}|]])
 
-  --       shouldBe [{p:[1],ld:2}], type.transform [{p:[0],ld:2}], [{p:[0],li:1}], "left"
-  --       shouldBe [{p:[1],ld:2}], type.transform [{p:[0],ld:2}], [{p:[0],li:1}], "right"
+        shouldBe [[j|{p:[1],ld:2}|]] (transformLeft [[j|{p:[0],ld:2}|]] [[j|{p:[0],li:1}|]])
+        shouldBe [[j|{p:[1],ld:2}|]] (transformRight [[j|{p:[0],ld:2}|]] [[j|{p:[0],li:1}|]])
 
   --     it "converts ops on deleted elements to noops" $ do
   --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x"}], "left"
