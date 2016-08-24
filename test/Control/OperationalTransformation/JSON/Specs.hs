@@ -21,23 +21,24 @@ transform val1 val2 = (toJSON op1', toJSON op2')
     Success (op2 :: JSONOperation) = fromJSON val2
     Right (op1', op2') = C.transform op1 op2
 
-
 -- TODO: these might be backwards, not sure yet
+transformLeft :: A.Value -> A.Value -> A.Value
 transformLeft a b = a'
   where (a', b') = transform a b
+
+transformRight :: A.Value -> A.Value -> A.Value
 transformRight a b = b'
   where (a', b') = transform a b
 
-
 specs = do
   describe "sanity" $ do
-    describe "#compose()" $ do
-      it "od,oi --> od+oi" $ do
-        shouldBe [[j|{p:["foo"], od:1, oi:2}|]] (compose [[j|{p:["foo"],od:1}|]] [[j|{p:["foo"],oi:2}|]])
-        shouldBe [[j|{p:["foo"], od:1}|],[j|{p:["bar"], oi:2}|]] (compose [[j|{p:["foo"],od:1}|]] [[j|{p:["bar"],oi:2}|]])
+    --describe "#compose()" $ do
+    --  it "od,oi --> od+oi" $ do
+    --    shouldBe [j|{p:["foo"], od:1, oi:2}|] (compose [j|{p:["foo"],od:1}|] [j|{p:["foo"],oi:2}|])
+    --    shouldBe [j|{p:["foo"], od:1}|],[j|{p:["bar"], oi:2}|] (compose [j|{p:["foo"],od:1}|] [j|{p:["bar"],oi:2}|])
 
-      it "merges od+oi, od+oi -> od+oi" $ do
-        shouldBe [[j|{p:["foo"], od:1, oi:2}|]] (compose [[j|{p:["foo"],od:1,oi:3}|]] [[j|{p:["foo"],od:3,oi:2}|]])
+    --  it "merges od+oi, od+oi -> od+oi" $ do
+    --    shouldBe [j|{p:["foo"], od:1, oi:2}|] (compose [j|{p:["foo"],od:1,oi:3}|] [j|{p:["foo"],od:3,oi:2}|])
 
 
 -- * Everything below this point isn't 100% converted from Coffeescript to Haskell yet
@@ -50,8 +51,8 @@ specs = do
     --           shouldBe op1 (transform op1) op2 "right"
 
     --     t [] []
-    --     t [[j|{p:["foo"], oi:1}|]] []
-    --     t [[j|{p:["foo"], oi:1}|]] [[j|{p:["bar"], oi:2}|]]
+    --     t [j|{p:["foo"], oi:1}|] []
+    --     t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
 
   -- describe "number" $ do
   --   it "Adds a number" $ do
