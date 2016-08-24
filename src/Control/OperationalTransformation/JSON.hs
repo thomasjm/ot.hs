@@ -10,11 +10,31 @@ module Control.OperationalTransformation.JSON
 
 import Control.OperationalTransformation
 import Control.OperationalTransformation.JSON.Types
+import Data.List
 
 invertOperation = undefined
 
+commonPath :: Path -> Path -> Path
+commonPath = undefined
+
+
+inc :: PathSegment -> PathSegment
+inc (Pos x) = Pos (x + 1)
+inc (Prop _) = error "Tried to increment a prop"
+
+
 -- TODO: implement these operations
 instance OTOperation JSONOperation where
+  -- An InsertString can't affect a ListInsert at all
+  -- The only way a ListInsert can affect an InsertString is if the InsertString is at a point in the tree where it's
+  -- in the list after the edited position (or the child of some such element)
+  transform op1@(InsertString path pos s) op2@(ListInsert path2 pos2 val) | ((path2 `isPrefixOf` path) && (x >= pos2)) = Right (InsertString path' pos s, op2) where
+                                                                              (beginning, rest) = splitAt (length path2) path
+                                                                              listPos@(Pos x) = last beginning
+                                                                              path' = (init beginning) ++ [inc listPos] ++ rest
+  transform op1@(InsertString path pos s) op2@(ListInsert path2 pos2 val) = Right (op1, op2)
+
+
   transform (Add path1 operand1) (Add path2 operand2) = undefined
   transform (Add aPath aOperand) (ListInsert liPath liI liValue) = undefined
   transform (Add aPath aOperand) (ListDelete ldPath ldI ldValue) = undefined
@@ -115,7 +135,6 @@ instance OTOperation JSONOperation where
   transform (ApplySubtypeOperation asoPath asoOp) (InsertString isPath isI isStr) = undefined
   transform (ApplySubtypeOperation asoPath asoOp) (DeleteString dsPath dsI dsStr) = undefined
   transform (InsertString isPath isI isStr) (Add aPath aOperand) = undefined
-  transform (InsertString isPath isI isStr) (ListInsert liPath liI liValue) = undefined
   transform (InsertString isPath isI isStr) (ListDelete ldPath ldI ldValue) = undefined
   transform (InsertString isPath isI isStr) (ListReplace lrPath lrI lrOld lrNew) = undefined
   transform (InsertString isPath isI isStr) (ListMove lmPath lmSrc lmDst) = undefined

@@ -2,6 +2,8 @@
 
 module Control.OperationalTransformation.JSON.Types
 ( JSONOperation(..)
+  , Path
+  , PathSegment(..)
 ) where
 
 import Control.OperationalTransformation.Text (TextOperation)
@@ -10,19 +12,20 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
+-- import Debug.Trace
 
 -- * PathSegment and Path
 
 data PathSegment
   = Prop T.Text
   | Pos Int
-  deriving Show
+  deriving (Show, Eq)
 
 type Path = [PathSegment]
 
 instance FromJSON PathSegment where
-  parseJSON (String a) = Prop <$> parseJSON (String a)
-  parseJSON (Number a) = Pos  <$> parseJSON (Number a)
+  parseJSON (String x) = return $ Prop x
+  parseJSON (Number x) = return $ Pos $ round x
   parseJSON _ = fail "Invalid Pathsegment"
 
 -- * JSONOperation
@@ -64,54 +67,55 @@ data JSONOperation
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
   | DeleteString Path Int T.Text
 
+  deriving (Eq, Show)
 
 instance ToJSON JSONOperation where
-  toJSON = undefined
+  toJSON (Add a b) = undefined
 
 instance FromJSON JSONOperation where
-  parseJSON (A.Object v) | "na" `elem` (HM.elems v) = Add <$> v .: "p" <*> v .: "na"
+  parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
 
   -- Lists
-  parseJSON (A.Object v) | "li" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "li" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              obj <- v .: "li"
                              return $ ListInsert path index obj
-  parseJSON (A.Object v) | "ld" `elem` (HM.elems v) && "li" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "ld" `elem` (HM.keys v) && "li" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              before <- v .: "ld"
                              after <- v .: "li"
                              return $ ListReplace path index before after
-  parseJSON (A.Object v) | "ld" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "ld" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              obj <- v .: "ld"
                              return $ ListDelete path index obj
-  parseJSON (A.Object v) | "lm" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "lm" `elem` (HM.keys v) = do
                              (path, index1) <- parsePathAndIndex v
                              index2 <- v .: "lm"
                              return $ ListMove path index1 index2
 
   -- Objects
-  parseJSON (A.Object v) | "oi" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "oi" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              obj <- v .: "oi"
                              return $ ObjectInsert path prop obj
-  parseJSON (A.Object v) | "od" `elem` (HM.elems v) && "oi" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "od" `elem` (HM.keys v) && "oi" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              before <- v .: "od"
                              after <- v .: "oi"
                              return $ ObjectReplace path prop before after
-  parseJSON (A.Object v) | "od" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "od" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              obj <- v .: "od"
                              return $ ObjectDelete path prop obj
 
   -- Subtypes
-  parseJSON (A.Object v) | "o" `elem` (HM.elems v) = ApplySubtypeOperation <$> v .: "p" <*> v .: "o"
-  parseJSON (A.Object v) | "si" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "o" `elem` (HM.keys v) = ApplySubtypeOperation <$> v .: "p" <*> v .: "o"
+  parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "si"
                              return $ InsertString path index str
-  parseJSON (A.Object v) | "sd" `elem` (HM.elems v) = do
+  parseJSON (A.Object v) | "sd" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "sd"
                              return $ DeleteString path index str
