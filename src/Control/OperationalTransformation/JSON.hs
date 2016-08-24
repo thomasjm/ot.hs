@@ -22,6 +22,7 @@ inc :: PathSegment -> PathSegment
 inc (Pos x) = Pos (x + 1)
 inc (Prop _) = error "Tried to increment a prop"
 
+rev (a, b) = (b, a)
 
 -- TODO: implement these operations
 instance OTOperation JSONOperation where
@@ -34,6 +35,8 @@ instance OTOperation JSONOperation where
                                                                                  path' = (init beginning) ++ [inc listPos] ++ rest
   transform op1@(InsertString path pos s) op2@(ListInsert listPath pos2 val) = Right (op1, op2)
 
+
+  transform op1@(ListInsert {}) op2@(InsertString {}) = rev <$> transform op2 op1
 
   transform (Add path1 operand1) (Add path2 operand2) = undefined
   transform (Add aPath aOperand) (ListInsert liPath liI liValue) = undefined
