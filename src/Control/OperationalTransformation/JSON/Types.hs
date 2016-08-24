@@ -75,6 +75,17 @@ data JSONOperation
 
 instance ToJSON JSONOperation where
   toJSON (InsertString path pos s) = A.Object $ HM.fromList [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
+  -- toJSON (Add path operand)               = object []
+  -- toJSON (ListInsert path i value)        = object []
+  -- toJSON (ListDelete path i value)        = object []
+  -- toJSON (ListReplace path i old new)     = object []
+  -- toJSON (ListMove path src dst)          = object []
+  -- toJSON (ObjectInsert path key value)    = object []
+  -- toJSON (ObjectDelete path key value)    = object []
+  -- toJSON (ObjectReplace path key old new) = object []
+  -- toJSON (ApplySubtypeOperation path op)  = object []
+  -- toJSON (InsertString path i str)        = object []
+  -- toJSON (DeleteString path i str)        = object []
 
 instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
