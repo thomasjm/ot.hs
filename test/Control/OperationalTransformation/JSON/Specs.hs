@@ -14,7 +14,8 @@ import Test.Tasty.Hspec
 -- These tests are taken directly from
 -- https://github.com/ottypes/json0/blob/master/test/json0.coffee
 
-compose = undefined
+compose :: A.Value -> A.Value -> A.Value
+compose = error "`compose` not yet implemented"
 
 transform :: A.Value -> A.Value -> (A.Value, A.Value)
 transform val1 val2 = (toJSON op1', toJSON op2')
@@ -41,6 +42,7 @@ transformRight :: A.Value -> A.Value -> A.Value
 transformRight a b = b'
   where (a', b') = transform a b
 
+specs :: SpecWith ()
 specs = do
   describe "sanity" $ do
     --describe "#compose()" $ do
@@ -55,16 +57,16 @@ specs = do
 -- * Everything below this point isn't 100% converted from Coffeescript to Haskell yet
 -- Uncommand and finish converting as needed
 
-    -- describe "#transform()" $ do
-    --   it "returns sane values" $ do
-    --     let t = \(op1, op2) -> do
-    --           shouldBe op1 (transform op1) op2 "left"
-    --           shouldBe op1 (transform op1) op2 "right"
+     describe "#transform() stuff" $ do
+       it "returns sane values" $ do
+         let t = \op1 op2 -> do
+              op1 `shouldBe` transformLeft op1 op2
 
-    --     t [] []
-    --     t [j|{p:["foo"], oi:1}|] []
-    --     t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-
+         -- t [] []
+         -- t [j|{p:["foo"], oi:1}|] []
+         -- t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+         t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+         shouldBe True True
   -- describe "number" $ do
   --   it "Adds a number" $ do
   --     shouldBe 3, type.apply 1, [{p:[], na:2}]
@@ -156,9 +158,9 @@ specs = do
   --       shouldBe [], type.compose [], [{p:["x","y",0],lm:0}]
   --     ###
 
-    describe "#transform()" $ do
-      it "bumps paths when list elements are inserted or removed" $ do
-        shouldBe [j|{p:[2, 200], si:"hi"}|] (transformLeft [j|{p:[1, 200], si:"hi"}|] [j|{p:[0], li:"x"}|])
+  describe "#transform()" $ do
+    it "bumps paths when list elements are inserted or removed" $ do
+      shouldBe [j|{p:[2, 200], si:"hi"}|] (transformLeft [j|{p:[1, 200], si:"hi"}|] [j|{p:[0], li:"x"}|])
         -- shouldBe [j|{p:[1, 201], si:"hi"}|] (transformRight [j|{p:[0, 201], si:"hi"}|] [j|{p:[0], li:"x"}|])
         -- shouldBe [j|{p:[0, 202], si:"hi"}|] (transformLeft [j|{p:[0, 202], si:"hi"}|] [j|{p:[1], li:"x"}|])
         -- shouldBe [j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
