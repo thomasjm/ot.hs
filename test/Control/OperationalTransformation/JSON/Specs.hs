@@ -148,23 +148,23 @@ specs = do
     describe "#transform()" $ do
       it "bumps paths when list elements are inserted or removed" $ do
         shouldBe [j|{p:[2, 200], si:"hi"}|] (transformLeft [j|{p:[1, 200], si:"hi"}|] [j|{p:[0], li:"x"}|])
-        shouldBe [j|{p:[1, 201], si:"hi"}|] (transformRight [j|{p:[0, 201], si:"hi"}|] [j|{p:[0], li:"x"}|])
-        shouldBe [j|{p:[0, 202], si:"hi"}|] (transformLeft [j|{p:[0, 202], si:"hi"}|] [j|{p:[1], li:"x"}|])
-        shouldBe [j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
-        shouldBe [j|{p:[1], t:"text0", o:[{p:201, i:"hi"}]}|] (transformRight [j|{p:[0], t:"text0", o:[{p:201, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
-        shouldBe [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] [j|{p:[1], li:"x"}|])
+        -- shouldBe [j|{p:[1, 201], si:"hi"}|] (transformRight [j|{p:[0, 201], si:"hi"}|] [j|{p:[0], li:"x"}|])
+        -- shouldBe [j|{p:[0, 202], si:"hi"}|] (transformLeft [j|{p:[0, 202], si:"hi"}|] [j|{p:[1], li:"x"}|])
+        -- shouldBe [j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
+        -- shouldBe [j|{p:[1], t:"text0", o:[{p:201, i:"hi"}]}|] (transformRight [j|{p:[0], t:"text0", o:[{p:201, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
+        -- shouldBe [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] [j|{p:[1], li:"x"}|])
 
-        shouldBe [j|{p:[0, 203], si:"hi"}|] (transformLeft [j|{p:[1, 203], si:"hi"}|] [j|{p:[0], ld:"x"}|])
-        shouldBe [j|{p:[0, 204], si:"hi"}|] (transformLeft [j|{p:[0, 204], si:"hi"}|] [j|{p:[1], ld:"x"}|])
-        shouldBe [j|{p:["x",3], si: "hi"}|] (transformLeft [j|{p:["x",3], si:"hi"}|] [j|{p:["x",0,"x"], li:0}|])
-        shouldBe [j|{p:["x",3,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",5], li:0}|])
-        shouldBe [j|{p:["x",4,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",0], li:0}|])
-        shouldBe [j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|] [j|{p:[0], ld:"x"}|])
-        shouldBe [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
-        shouldBe [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] (transformLeft [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] [j|{p:["x",0,"x"], li:0}|])
+        -- shouldBe [j|{p:[0, 203], si:"hi"}|] (transformLeft [j|{p:[1, 203], si:"hi"}|] [j|{p:[0], ld:"x"}|])
+        -- shouldBe [j|{p:[0, 204], si:"hi"}|] (transformLeft [j|{p:[0, 204], si:"hi"}|] [j|{p:[1], ld:"x"}|])
+        -- shouldBe [j|{p:["x",3], si: "hi"}|] (transformLeft [j|{p:["x",3], si:"hi"}|] [j|{p:["x",0,"x"], li:0}|])
+        -- shouldBe [j|{p:["x",3,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",5], li:0}|])
+        -- shouldBe [j|{p:["x",4,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",0], li:0}|])
+        -- shouldBe [j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|] [j|{p:[0], ld:"x"}|])
+        -- shouldBe [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
+        -- shouldBe [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] (transformLeft [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] [j|{p:["x",0,"x"], li:0}|])
 
-        shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
-        shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+        -- shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+        -- shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
 
   --     it "converts ops on deleted elements to noops" $ do
   --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x"}], "left"
