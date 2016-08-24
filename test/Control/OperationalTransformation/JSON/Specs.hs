@@ -21,6 +21,15 @@ transform val1 val2 = (toJSON op1', toJSON op2')
     Success (op2 :: JSONOperation) = fromJSON val2
     Right (op1', op2') = C.transform op1 op2
 
+-- Just for REPL testing
+transform' :: A.Value -> A.Value -> (JSONOperation, JSONOperation)
+transform' val1 val2 = (op1', op2')
+  where
+    Success (op1 :: JSONOperation) = fromJSON val1
+    Success (op2 :: JSONOperation) = fromJSON val2
+    Right (op1', op2') = C.transform op1 op2
+
+
 -- TODO: these might be backwards, not sure yet
 transformLeft :: A.Value -> A.Value -> A.Value
 transformLeft a b = a'
