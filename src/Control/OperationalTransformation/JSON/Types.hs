@@ -74,7 +74,7 @@ data JSONOperation
   deriving (Eq, Show)
 
 instance ToJSON JSONOperation where
-  toJSON (InsertString path pos s) = A.Object $ HM.fromList [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
+  toJSON (InsertString path pos s) = object [("p", toJSON (path ++ [Pos pos])), ("si", A.String s)]
   -- toJSON (Add path operand)               = object []
   -- toJSON (ListInsert path i value)        = object []
   -- toJSON (ListDelete path i value)        = object []
