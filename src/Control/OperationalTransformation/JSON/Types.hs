@@ -38,10 +38,13 @@ instance ToJSON PathSegment where
 -- Based on the "Summary of operations" at https://github.com/ottypes/json0
 -- See also https://github.com/josephg/ShareJS/blob/master/lib/types/json-api.js
 data JSONOperation
+
+  = Identity
+
   -- * Numbers
 
   -- adds the number to the number at [path]
-  = Add Path Int
+  | Add Path Int
 
   -- * Lists
 
@@ -68,13 +71,14 @@ data JSONOperation
   -- applies the subtype op o of type t to the object at [path]
   | ApplySubtypeOperation Path T.Text A.Value
   -- inserts the string s at offset offset into the string at [path] (uses subtypes internally)
-  | InsertString Path Int T.Text
+  | StringInsert Path Int T.Text
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
-  | DeleteString Path Int T.Text
+  | StringDelete Path Int T.Text
 
   deriving (Eq, Show)
 
 instance ToJSON JSONOperation where
+  toJSON Identity = object []
   toJSON (Add path operand) = object [("p", toJSON path), ("na", A.Number $ fromIntegral operand)]
   toJSON (ListInsert path i value)    = object [("p", toJSON (path ++ [Pos i])), ("li", value)]
   toJSON (ListDelete path i value)    = object [("p", toJSON (path ++ [Pos i])), ("ld", value)]
@@ -84,10 +88,13 @@ instance ToJSON JSONOperation where
   toJSON (ObjectDelete path key value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
   toJSON (ObjectReplace path key old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
   toJSON (ApplySubtypeOperation path t op) = object [("p", toJSON path), ("t", A.String t), ("o", op)]
-  toJSON (InsertString path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
-  toJSON (DeleteString path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
+  toJSON (StringInsert path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
+  toJSON (StringDelete path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
 
 instance FromJSON JSONOperation where
+  parseJSON (A.Object v) | HM.null v = return Identity
+
+  -- Numbers
   parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
 
   -- Lists
@@ -129,11 +136,11 @@ instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "si"
-                             return $ InsertString path index str
+                             return $ StringInsert path index str
   parseJSON (A.Object v) | "sd" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "sd"
-                             return $ DeleteString path index str
+                             return $ StringDelete path index str
   parseJSON _ = fail "Failed to parse operation"
 
 
