@@ -163,7 +163,7 @@ specs = do
       shouldBe [j|{p:[2, 200], si:"hi"}|] (transformLeft [j|{p:[1, 200], si:"hi"}|] [j|{p:[0], li:"x"}|])
       shouldBe [j|{p:[1, 201], si:"hi"}|] (transformRight [j|{p:[0, 201], si:"hi"}|] [j|{p:[0], li:"x"}|])
       shouldBe [j|{p:[0, 202], si:"hi"}|] (transformLeft [j|{p:[0, 202], si:"hi"}|] [j|{p:[1], li:"x"}|])
-      -- shouldBe [j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
+      shouldBe [j|{p:[2], t:"text0", o:[{p:200, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:200, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
       -- shouldBe [j|{p:[1], t:"text0", o:[{p:201, i:"hi"}]}|] (transformRight [j|{p:[0], t:"text0", o:[{p:201, i:"hi"}]}|] [j|{p:[0], li:"x"}|])
       -- shouldBe [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:202, i:"hi"}]}|] [j|{p:[1], li:"x"}|])
 
