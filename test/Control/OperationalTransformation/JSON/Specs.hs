@@ -32,7 +32,6 @@ transform' val1 val2 = (op1', op2')
     Success (op2 :: JSONOperation) = fromJSON val2
     Right (op1', op2') = C.transform op1 op2
 
-
 -- TODO: these might be backwards, not sure yet
 transformLeft :: A.Value -> A.Value -> A.Value
 transformLeft a b = a'
@@ -57,16 +56,16 @@ specs = do
 -- * Everything below this point isn't 100% converted from Coffeescript to Haskell yet
 -- Uncommand and finish converting as needed
 
-     describe "#transform() stuff" $ do
-       it "returns sane values" $ do
-         let t = \op1 op2 -> do
-              op1 `shouldBe` transformLeft op1 op2
+     --describe "#transform() stuff" $ do
+     --  it "returns sane values" $ do
+     --    let t = \op1 op2 -> do
+     --         op1 `shouldBe` transformLeft op1 op2
 
-         -- t [] []
-         -- t [j|{p:["foo"], oi:1}|] []
-         -- t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-         t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-         shouldBe True True
+     --    -- t [] []
+     --    -- t [j|{p:["foo"], oi:1}|] []
+     --    -- t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+     --    t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+     --    shouldBe True True
   -- describe "number" $ do
   --   it "Adds a number" $ do
   --     shouldBe 3, type.apply 1, [{p:[], na:2}]
@@ -179,27 +178,27 @@ specs = do
       -- shouldBe [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
       shouldBe [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] (transformLeft [j|{p:["x"], t:"text0", o:[{p:3, i:"hi"}]}|] [j|{p:["x",0,"x"], li:0}|])
 
-      -- shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
-      -- shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+        -- shouldBe [j|{p:[1],ld:2}|] (transformLeft [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
+        -- shouldBe [j|{p:[1],ld:2}|] (transformRight [j|{p:[0],ld:2}|] [j|{p:[0],li:1}|])
 
-  --     it "converts ops on deleted elements to noops" $ do
-  --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x"}], "left"
-  --       shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], ld:"x"}], "left"
-  --       shouldBe [{p:[0],li:"x"}], type.transform [{p:[0],li:"x"}], [{p:[0],ld:"y"}], "left"
-  --       shouldBe [], type.transform [{p:[0],na:-3}], [{p:[0],ld:48}], "left"
+        --     it "converts ops on deleted elements to noops" $ do
+        --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x"}], "left"
+        --       shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], ld:"x"}], "left"
+        --       shouldBe [{p:[0],li:"x"}], type.transform [{p:[0],li:"x"}], [{p:[0],ld:"y"}], "left"
+        --       shouldBe [], type.transform [{p:[0],na:-3}], [{p:[0],ld:48}], "left"
 
-  --     it "converts ops on replaced elements to noops" $ do
-  --       shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x", li:"y"}], "left"
-  --       shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], ld:"x", li:"y"}], "left"
-  --       shouldBe [{p:[0], li:"hi"}], type.transform [{p:[0], li:"hi"}], [{p:[0], ld:"x", li:"y"}], "left"
+        --     it "converts ops on replaced elements to noops" $ do
+               --shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], ld:"x", li:"y"}], "left"
+        --       shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], ld:"x", li:"y"}], "left"
+        --       shouldBe [{p:[0], li:"hi"}], type.transform [{p:[0], li:"hi"}], [{p:[0], ld:"x", li:"y"}], "left"
 
-  --     it "changes deleted data to reflect edits" $ do
-  --       shouldBe [{p:[1], ld:"abc"}], type.transform [{p:[1], ld:"a"}], [{p:[1, 1], si:"bc"}], "left"
-  --       shouldBe [{p:[1], ld:"abc"}], type.transform [{p:[1], ld:"a"}], [{p:[1], t:"text0", o:[{p:1, i:"bc"}]}], "left"
+        --     it "changes deleted data to reflect edits" $ do
+        --       shouldBe [{p:[1], ld:"abc"}], type.transform [{p:[1], ld:"a"}], [{p:[1, 1], si:"bc"}], "left"
+        --       shouldBe [{p:[1], ld:"abc"}], type.transform [{p:[1], ld:"a"}], [{p:[1], t:"text0", o:[{p:1, i:"bc"}]}], "left"
 
-  --     it "Puts the left op first if two inserts are simultaneous" $ do
-  --       shouldBe [{p:[1], li:"a"}], type.transform [{p:[1], li:"a"}], [{p:[1], li:"b"}], "left"
-  --       shouldBe [{p:[2], li:"b"}], type.transform [{p:[1], li:"b"}], [{p:[1], li:"a"}], "right"
+    it "Puts the left op first if two inserts are simultaneous" $ do
+      [j|{p:[1], li:"a"}|] `shouldBe` transformLeft  [j|{p:[1], li:"a"}|] [j|{p:[1], li:"b"}|]
+      [j|{p:[2], li:"b"}|] `shouldBe` transformRight [j|{p:[1], li:"b"}|] [j|{p:[1], li:"a"}|]
 
   --     it "converts an attempt to re-delete a list element into a no-op" $ do
   --       shouldBe [], type.transform [{p:[1], ld:"x"}], [{p:[1], ld:"x"}], "left"
