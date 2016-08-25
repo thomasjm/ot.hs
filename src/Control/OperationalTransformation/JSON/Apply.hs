@@ -3,9 +3,8 @@
 module Control.OperationalTransformation.JSON.Apply where
 
 import Control.Lens hiding (Identity)
-import Control.OperationalTransformation
-import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
+import Control.OperationalTransformation.JSON.Transform ()
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
 import Data.Aeson.Lens
@@ -16,7 +15,7 @@ import qualified Data.Vector as V
 pathSegmentToTraversal (Pos x) = nth x
 pathSegmentToTraversal (Prop k) = key k
 
-pathToTraversal path = foldl1 (.) $ [pathSegmentToTraversal x | x <- path]
+pathToTraversal path = foldl (.) id $ [pathSegmentToTraversal x | x <- path]
 
 listAtPath path = (pathToTraversal path) . _Array
 objectAtPath path = (pathToTraversal path) . _Object
@@ -36,49 +35,50 @@ stringDelete :: T.Text -> Int -> T.Text -> T.Text
 stringDelete = undefined
 
 
-instance OTSystem A.Value JSONOperation where
-  apply Identity input = Right input
+apply :: JSONOperation -> A.Value -> Either String A.Value
+apply Identity input = Right input
 
-  apply (Add path n) input = case input ^? (numberAtPath path) of
-    Nothing -> Left "Couldn't find number in Add"
-    Just x -> Right $ set (numberAtPath path) ((fromIntegral n) + x) input
+apply (Add path n) input = case input ^? (numberAtPath path) of
+  Nothing -> Left "Couldn't find number in Add"
+  Just x -> Right $ set (numberAtPath path) ((fromIntegral n) + x) input
 
-  apply (ListInsert path pos value) input = case input ^? (listAtPath path) of
-    Nothing -> Left "Couldn't find list in ListInsert"
-    Just l -> Right $ set (listAtPath path) (vectorInsert l pos value) input
+apply (ListInsert path pos value) input = case input ^? (listAtPath path) of
+  Nothing -> Left "Couldn't find list in ListInsert"
+  Just l -> Right $ set (listAtPath path) (vectorInsert l pos value) input
 
-  apply (ListDelete path pos value) input = case input ^? (listAtPath path) of
-    Nothing -> Left "Couldn't find list in ListDelete"
-    Just l -> Right $ set (listAtPath path) (vectorDelete l pos value) input
+apply (ListDelete path pos value) input = case input ^? (listAtPath path) of
+  Nothing -> Left "Couldn't find list in ListDelete"
+  Just l -> Right $ set (listAtPath path) (vectorDelete l pos value) input
 
-  apply (ListReplace path pos old new) input = case input ^? (listAtPath path) of
-    Nothing -> Left "Couldn't find list in ListReplace"
-    Just _ -> Right $ set ((pathToTraversal path) . (nth pos)) new input
+apply (ListReplace path pos old new) input = case input ^? (listAtPath path) of
+  Nothing -> Left "Couldn't find list in ListReplace"
+  Just _ -> Right $ set ((pathToTraversal path) . (nth pos)) new input
 
-  apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
-    Nothing -> Left "Couldn't find list in ListMove"
-    Just _ -> undefined
+-- TODO
+apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
+  Nothing -> Left "Couldn't find list in ListMove"
+  Just _ -> error "ListMove apply not implemented"
 
-  apply (ObjectInsert path k value) input = case input ^? (objectAtPath path) of
-    Nothing -> Left "Couldn't find object in ObjectInsert"
-    Just _ -> Right $ set ((pathToTraversal path) . (key k)) value input
+apply (ObjectInsert path k value) input = case input ^? (objectAtPath path) of
+  Nothing -> Left "Couldn't find object in ObjectInsert"
+  Just _ -> Right $ set ((pathToTraversal path) . (key k)) value input
 
-  apply (ObjectDelete path k value) input = case input ^? (objectAtPath path) of
-    Nothing -> Left "Couldn't find object in ObjectInsert"
-    Just _ -> Right $ set ((pathToTraversal path)) value input
+apply (ObjectDelete path k value) input = case input ^? (objectAtPath path) of
+  Nothing -> Left "Couldn't find object in ObjectInsert"
+  Just _ -> Right $ set ((pathToTraversal path)) value input
 
-  apply (ObjectReplace path k old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
+apply (ObjectReplace path k old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
 
-  -- TODO
-  apply (ApplySubtypeOperation path typ op) input = undefined
+-- TODO
+apply (ApplySubtypeOperation path typ op) input = error "ApplySubtypeOperation apply not implemented"
 
-  apply (StringInsert path pos s) input = case input ^? (stringAtPath path) of
-    Nothing -> Left "Couldn't find string in StringInsert"
-    Just str -> Right $ set (stringAtPath path) (stringInsert str pos s) input
+apply (StringInsert path pos s) input = case input ^? (stringAtPath path) of
+  Nothing -> Left "Couldn't find string in StringInsert"
+  Just str -> Right $ set (stringAtPath path) (stringInsert str pos s) input
 
-  apply (StringDelete path pos s) input = case input ^? (stringAtPath path) of
-    Nothing -> Left "Couldn't find string in StringDelete"
-    Just str -> Right $ set (stringAtPath path) (stringDelete str pos s) input
+apply (StringDelete path pos s) input = case input ^? (stringAtPath path) of
+  Nothing -> Left "Couldn't find string in StringDelete"
+  Just str -> Right $ set (stringAtPath path) (stringDelete str pos s) input
 
 
 -- For playing in ghci
