@@ -3,6 +3,7 @@
 module Control.OperationalTransformation.JSON.Apply where
 
 import Control.Lens hiding (Identity)
+import Control.OperationalTransformation as OT
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Transform ()
 import Control.OperationalTransformation.JSON.Types
@@ -75,8 +76,11 @@ apply (ObjectDelete path k value) input = case input ^? (objectAtPath path) of
 
 apply (ObjectReplace path k old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
 
--- TODO
-apply (ApplySubtypeOperation path typ op) input = error "ApplySubtypeOperation apply not implemented"
+apply (ApplySubtypeOperation path typ op) input = case input ^? stringAtPath path of
+  Nothing -> Left "Couldn't find text in ApplySubtypeOperation"
+  Just t -> case OT.apply op t of
+    Left err -> Left err
+    Right result -> Right $ set (stringAtPath path) result input
 
 apply (StringInsert path pos s) input = case input ^? (stringAtPath path) of
   Nothing -> Left "Couldn't find string in StringInsert"
