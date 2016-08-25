@@ -31,6 +31,10 @@ transform val1 val2 = (toJSON op1', toJSON op2')
       Left err -> error err
       Right x -> x
 
+d :: A.Value -> JSONOperation
+d jsonValue = op
+  where
+    Success op = fromJSON jsonValue
 
 apply :: A.Value -> A.Value -> A.Value
 apply input opval = case C.apply op input of
