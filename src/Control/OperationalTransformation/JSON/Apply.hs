@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings, MultiParamTypeClasses, QuasiQuotes, OverloadedLists #-}
 
 module Control.OperationalTransformation.JSON.Apply where
 
@@ -8,6 +8,7 @@ import Control.OperationalTransformation.JSON.Transform ()
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
 import Data.Aeson.Lens
+import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
@@ -23,17 +24,22 @@ stringAtPath path = (pathToTraversal path) . _String
 numberAtPath path = (pathToTraversal path) . _Number
 
 vectorInsert :: V.Vector A.Value -> Int -> A.Value -> V.Vector A.Value
-vectorInsert vec index item = undefined
+vectorInsert vec index item = beginning <> [item] <> rest where
+  (beginning, rest) = V.splitAt index vec
 
 vectorDelete :: V.Vector A.Value -> Int -> A.Value -> V.Vector A.Value
-vectorDelete vec index item = undefined
+vectorDelete vec index item = beginning <> (V.drop 1 rest) where
+  (beginning, rest) = V.splitAt index vec
 
+-- TODO: handle invalid index
 stringInsert :: T.Text -> Int -> T.Text -> T.Text
-stringInsert = undefined
+stringInsert haystack pos needle = beginning <> needle <> rest
+  where (beginning, rest) = T.splitAt pos haystack
 
+-- TODO: check the value matches
 stringDelete :: T.Text -> Int -> T.Text -> T.Text
-stringDelete = undefined
-
+stringDelete haystack pos needle = beginning <> (T.drop (T.length needle) rest)
+  where (beginning, rest) = T.splitAt pos haystack
 
 apply :: JSONOperation -> A.Value -> Either String A.Value
 apply Identity input = Right input

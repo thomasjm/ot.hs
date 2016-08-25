@@ -71,16 +71,15 @@ specs = do
 -- * Everything below this point isn't 100% converted from Coffeescript to Haskell yet
 -- Uncommand and finish converting as needed
 
-     --describe "#transform() stuff" $ do
-     --  it "returns sane values" $ do
-     --    let t = \op1 op2 -> do
-     --         op1 `shouldBe` transformLeft op1 op2
+  describe "#transform() stuff" $ do
+   it "returns sane values" $ do
+     let t = \op1 op2 -> op1 `shouldBe` transformLeft op1 op2
 
-     --    -- t [] []
-     --    -- t [j|{p:["foo"], oi:1}|] []
-     --    -- t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-     --    t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-     --    shouldBe True True
+     t [j|{}|] [j|{}|]
+     t [j|{p:["foo"], oi:1}|] [j|{}|]
+     t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+     t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
+     shouldBe True True
 
   describe "number" $ do
     it "Adds a number" $ do
@@ -105,73 +104,72 @@ specs = do
 
 
   -- # Strings should be handled internally by the text type. We"ll just do some basic sanity checks here.
-  -- describe "string" $ do
-  --   describe "#apply()", -> it "works" $ do
-  --     shouldBe "abc", type.apply "a", [{p:[1], si:"bc"}]
-  --     shouldBe "bc", type.apply "abc", [{p:[0], sd:"a"}]
-  --     shouldBe {x:"abc"}, type.apply {x:"a"}, [{p:["x", 1], si:"bc"}]
+  describe "string" $ do
+    describe "#apply()" $ it "works" $ do
+      shouldBe [j|"abc"|] (apply [j|"a"|] [j|{p:[1], si:"bc"}|])
+      shouldBe [j|"bc"|] (apply [j|"abc"|] [j|{p:[0], sd:"a"}|])
+      shouldBe [j|{x:"abc"}|] (apply [j|{x:"a"}|] [j|{p:["x", 1], si:"bc"}|])
 
-  --   describe "#transform()" $ do
-  --     it "splits deletes" $ do
-  --       shouldBe type.transform([{p:[0], sd:"ab"}], [{p:[1], si:"x"}], "left"), [{p:[0], sd:"a"}, {p:[1], sd:"b"}]
+  describe "#transform()" $ do
+    -- TODO: how to deal with lists of ops?
+    -- it "splits deletes" $ do
+    --   shouldBe [[j|{p:[0], sd:"a"}|], [j|{p:[1], sd:"b"}|]] (transformLeft [j|{p:[0], sd:"ab"}|] [j|{p:[1], si:"x"}|])
 
-  --     it "cancels out other deletes" $ do
-  --       shouldBe type.transform([{p:["k", 5], sd:"a"}], [{p:["k", 5], sd:"a"}], "left"), []
+    it "cancels out other deletes" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:["k", 5], sd:"a"}|] [j|{p:["k", 5], sd:"a"}|])
 
-  --     it "does not throw errors with blank inserts" $ do
-  --       shouldBe type.transform([{p: ["k", 5], si:""}], [{p: ["k", 3], si: "a"}], "left"), []
+    it "does not throw errors with blank inserts" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p: ["k", 5], si:""}|] [j|{p: ["k", 3], si: "a"}|])
 
-  -- describe "string subtype" $ do
-  --   describe "#apply()" $ do
-  --     it "works" $ do
-  --       shouldBe "abc", type.apply "a", [{p:[], t:"text0", o:[{p:1, i:"bc"}]}]
-  --       shouldBe "bc", type.apply "abc", [{p:[], t:"text0", o:[{p:0, d:"a"}]}]
-  --       shouldBe {x:"abc"}, type.apply {x:"a"}, [{p:["x"], t:"text0", o:[{p:1, i:"bc"}]}]
+  describe "string subtype" $ do
+    describe "#apply()" $ do
+      it "works" $ do
+        shouldBe [j|"abc"|] (apply [j|"a"|] [j|{p:[], t:"text0", o:[{p:1, i:"bc"}]}|])
+        shouldBe [j|"bc"|] (apply [j|"abc"|] [j|{p:[], t:"text0", o:[{p:0, d:"a"}]}|])
+        shouldBe [j|{x:"abc"}|] (apply [j|{x:"a"}|] [j|{p:["x"], t:"text0", o:[{p:1, i:"bc"}]}|])
 
-  --   describe "#transform()" $ do
-  --     it "splits deletes" $ do
-  --       a = [{p:[], t:"text0", o:[{p:0, d:"ab"}]}]
-  --       b = [{p:[], t:"text0", o:[{p:1, i:"x"}]}]
-  --       shouldBe type.transform(a, b, "left"), [{p:[], t:"text0", o:[{p:0, d:"a"}, {p:1, d:"b"}]}]
+    describe "#transform()" $ do
+      it "splits deletes" $ do
+        let a = [j|{p:[], t:"text0", o:[{p:0, d:"ab"}]}|]
+        let b = [j|{p:[], t:"text0", o:[{p:1, i:"x"}]}|]
+        shouldBe [j|{p:[], t:"text0", o:[{p:0, d:"a"}, {p:1, d:"b"}]}|] (transformLeft a b)
 
-  --     it "cancels out other deletes" $ do
-  --       shouldBe type.transform([{p:["k"], t:"text0", o:[{p:5, d:"a"}]}], [{p:["k"], t:"text0", o:[{p:5, d:"a"}]}], "left"), []
+      it "cancels out other deletes" $ do
+        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:{p:5, d:"a"}}|] [j|{p:["k"], t:"text0", o:[{p:5, d:"a"}]}|])
 
-  --     it "does not throw errors with blank inserts" $ do
-  --       shouldBe type.transform([{p:["k"], t:"text0", o:[{p:5, i:""}]}], [{p:["k"], t:"text0", o:[{p:3, i:"a"}]}], "left"), []
+      it "does not throw errors with blank inserts" $ do
+        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:{p:5, i:""}}|] [j|{p:["k"], t:"text0", o:[{p:3, i:"a"}]}|])
 
-  -- describe "subtype with non-array operation" $ do
-  --   describe "#transform()" $ do
-  --     it "works" $ do
-  --       a = [{p:[], t:"mock", o:"foo"}]
-  --       b = [{p:[], t:"mock", o:"bar"}]
-  --       shouldBe type.transform(a, b, "left"), [{p:[], t:"mock", o:{mock:true}}]
+  describe "subtype with non-array operation" $ do
+    describe "#transform()" $ do
+      it "works" $ do
+        let a = [j|{p:[], t:"mock", o:"foo"}|]
+        let b = [j|{p:[], t:"mock", o:"bar"}|]
+        shouldBe [j|{p:[], t:"mock", o:{mock:true}}|] (transformLeft a b)
 
-  -- describe "list" $ do
-  --   describe "apply" $ do
-  --     it "inserts" $ do
-  --       shouldBe ["a", "b", "c"], type.apply ["b", "c"], [{p:[0], li:"a"}]
-  --       shouldBe ["a", "b", "c"], type.apply ["a", "c"], [{p:[1], li:"b"}]
-  --       shouldBe ["a", "b", "c"], type.apply ["a", "b"], [{p:[2], li:"c"}]
+  describe "list" $ do
+    describe "apply" $ do
+      it "inserts" $ do
+        shouldBe [j|["a", "b", "c"]|] (apply [j|["b", "c"]|] [j|{p:[0], li:"a"}|])
+        shouldBe [j|["a", "b", "c"]|] (apply [j|["a", "c"]|] [j|{p:[1], li:"b"}|])
+        shouldBe [j|["a", "b", "c"]|] (apply [j|["a", "b"]|] [j|{p:[2], li:"c"}|])
 
-  --     it "deletes" $ do
-  --       shouldBe ["b", "c"], type.apply ["a", "b", "c"], [{p:[0], ld:"a"}]
-  --       shouldBe ["a", "c"], type.apply ["a", "b", "c"], [{p:[1], ld:"b"}]
-  --       shouldBe ["a", "b"], type.apply ["a", "b", "c"], [{p:[2], ld:"c"}]
+      it "deletes" $ do
+        shouldBe [j|["b", "c"]|] (apply [j|["a", "b", "c"]|] [j|{p:[0], ld:"a"}|])
+        shouldBe [j|["a", "c"]|] (apply [j|["a", "b", "c"]|] [j|{p:[1], ld:"b"}|])
+        shouldBe [j|["a", "b"]|] (apply [j|["a", "b", "c"]|] [j|{p:[2], ld:"c"}|])
 
-  --     it "replaces" $ do
-  --       shouldBe ["a", "y", "b"], type.apply ["a", "x", "b"], [{p:[1], ld:"x", li:"y"}]
+      it "replaces" $ do
+        shouldBe [j|["a", "y", "b"]|] (apply [j|["a", "x", "b"]|] [j|{p:[1], ld:"x", li:"y"}|])
 
-  --     it "moves" $ do
-  --       shouldBe ["a", "b", "c"], type.apply ["b", "a", "c"], [{p:[1], lm:0}]
-  --       shouldBe ["a", "b", "c"], type.apply ["b", "a", "c"], [{p:[0], lm:1}]
+      it "moves" $ do
+        shouldBe [j|["a", "b", "c"]|] (apply [j|["b", "a", "c"]|] [j|{p:[1], lm:0}|])
+        shouldBe [j|["a", "b", "c"]|] (apply [j|["b", "a", "c"]|] [j|{p:[0], lm:1}|])
 
-  --     ###
-  --     "null moves compose to nops" $ do
-  --       shouldBe [], type.compose [], [{p:[3],lm:3}]
-  --       shouldBe [], type.compose [], [{p:[0,3],lm:3}]
-  --       shouldBe [], type.compose [], [{p:["x","y",0],lm:0}]
-  --     ###
+      -- it "null moves compose to nops" $ do
+      --   shouldBe [], type.compose [], [{p:[3],lm:3}]
+      --   shouldBe [], type.compose [], [{p:[0,3],lm:3}]
+      --   shouldBe [], type.compose [], [{p:["x","y",0],lm:0}]
 
   describe "#transform()" $ do
     it "bumps paths when list elements are inserted or removed" $ do
