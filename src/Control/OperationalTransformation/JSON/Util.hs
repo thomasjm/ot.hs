@@ -21,8 +21,9 @@ unPos _ = error "unPos called on prop"
 
 -- |Force parse an operation. Just for REPL testing.
 parseOp :: A.Value -> JSONOperation
-parseOp x = op where
-  Success op = fromJSON x
+parseOp x = case fromJSON x of
+  Success op -> op
+  Error err -> error err
 
 
 -- |A generic way to set/get the path from a JSONOperation

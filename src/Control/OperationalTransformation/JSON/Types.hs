@@ -6,13 +6,14 @@ module Control.OperationalTransformation.JSON.Types
   , PathSegment(..)
 ) where
 
--- import Control.OperationalTransformation.Text (TextOperation)
+import Control.OperationalTransformation.Text (TextOperation(..), Action(..))
 import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
---import Data.String.Interpolate.IsString
+import Data.String.Interpolate.IsString
 import qualified Data.Text as T
+import qualified Data.Vector as V
 
 
 -- * PathSegment and Path
@@ -32,6 +33,20 @@ instance FromJSON PathSegment where
 instance ToJSON PathSegment where
   toJSON (Pos x) = A.Number $ fromIntegral x
   toJSON (Prop x) = A.String x
+
+parseAction :: A.Value -> A.Parser [Action]
+parseAction (A.Object x) | "i" `elem` HM.keys x = do
+  p <- x .: "p"
+  i <- x .: "i"
+  return $ [Retain p, Insert i]
+parseAction (A.Object x) | "d" `elem` HM.keys x = do
+  p <- x .: "p"
+  d :: T.Text <- x .: "d"
+  return $ [Retain p, Delete (T.length d)]
+parseAction x = error [i|Failed to parse: #{x}|]
+
+toJSONTextOperation :: TextOperation -> A.Value
+toJSONTextOperation = undefined
 
 -- * JSONOperation
 
@@ -69,7 +84,7 @@ data JSONOperation
   -- * Subtypes
 
   -- applies the subtype op o of type t to the object at [path]
-  | ApplySubtypeOperation Path T.Text A.Value
+  | ApplySubtypeOperation Path T.Text TextOperation
   -- inserts the string s at offset offset into the string at [path] (uses subtypes internally)
   | StringInsert Path Int T.Text
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
@@ -87,7 +102,7 @@ instance ToJSON JSONOperation where
   toJSON (ObjectInsert path key value)    = object [("p", toJSON (path ++ [Prop key])), ("oi", value)]
   toJSON (ObjectDelete path key value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
   toJSON (ObjectReplace path key old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
-  toJSON (ApplySubtypeOperation path t op) = object [("p", toJSON path), ("t", A.String t), ("o", op)]
+  toJSON (ApplySubtypeOperation path t op) = object [("p", toJSON path), ("t", A.String t), ("o", toJSONTextOperation op)]
   toJSON (StringInsert path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
   toJSON (StringDelete path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
 
@@ -132,7 +147,13 @@ instance FromJSON JSONOperation where
                              return $ ObjectDelete path prop obj
 
   -- Subtypes
-  parseJSON (A.Object v) | "o" `elem` (HM.keys v) = ApplySubtypeOperation <$> v .: "p" <*> v .: "t" <*> v .: "o"
+  parseJSON (A.Object v) | "o" `elem` (HM.keys v) = do
+                             path <- v .: "p"
+                             typ <- v .: "t"
+                             -- Parse the text type specially
+                             (A.Array ops) <- v .: "o"
+                             textOps <- sequence $ [parseAction x | x <- V.toList ops]
+                             return $ ApplySubtypeOperation path typ (TextOperation (concat textOps))
   parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "si"

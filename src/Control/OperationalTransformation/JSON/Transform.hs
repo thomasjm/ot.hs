@@ -4,6 +4,7 @@
 module Control.OperationalTransformation.JSON.Transform where
 
 
+import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
@@ -109,4 +110,10 @@ transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2
   | (path2 `isPrefixOf` path1) = undefined -- TODO rev <$> transform op2 op1 -- WLOG
   | (path1 `isPrefixOf` path2) = Right (op1, op2) -- TODO: increment the appropriate part of path2
   | otherwise = Right (op1, op2)
+
+-- For dueling subtype operations, defer to the operation's transform function
+transformDouble (ApplySubtypeOperation path1 typ1 op1) (ApplySubtypeOperation path2 typ2 op2) = case (C.transform op1 op2) of
+  Left err -> Left err
+  Right (op1', op2') -> Right (ApplySubtypeOperation path1 typ1 op1', ApplySubtypeOperation path2 typ2 op2')
+
 transformDouble x y = Left [i|Not handled: #{x} and #{y}|]
