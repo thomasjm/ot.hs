@@ -4,9 +4,8 @@
 module Control.OperationalTransformation.JSON.Specs where
 
 import qualified Control.OperationalTransformation as C
-import Control.OperationalTransformation.JSON
+import Control.OperationalTransformation.JSON hiding (apply)
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
-import Control.OperationalTransformation.JSON.Util
 import Data.Aeson as A
 import Test.Hspec
 import Test.Tasty
@@ -16,7 +15,12 @@ import Test.Tasty.Hspec
 -- https://github.com/ottypes/json0/blob/master/test/json0.coffee
 
 compose :: A.Value -> A.Value -> A.Value
-compose = error "`compose` not yet implemented"
+compose val1 val2 = case C.compose op1 op2 of
+  Left err -> error err
+  Right x -> toJSON x
+  where
+    Success (op1 :: JSONOperation) = fromJSON val1
+    Success (op2 :: JSONOperation) = fromJSON val2
 
 transform :: A.Value -> A.Value -> (A.Value, A.Value)
 transform val1 val2 = (toJSON op1', toJSON op2')
@@ -26,6 +30,13 @@ transform val1 val2 = (toJSON op1', toJSON op2')
     (op1', op2') = case C.transform op1 op2 of
       Left err -> error err
       Right x -> x
+
+
+apply :: A.Value -> A.Value -> A.Value
+apply input opval = case C.apply op input of
+  Left err -> error err
+  Right x -> x
+  where Success (op :: JSONOperation) = fromJSON opval
 
 
 -- Just for REPL testing
@@ -71,14 +82,14 @@ specs = do
      --    t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
      --    shouldBe True True
 
-  -- describe "number" $ do
-  --   it "Adds a number" $ do
-  --     shouldBe 3, type.apply 1, [{p:[], na:2}]
-  --     shouldBe [3], type.apply [1], [{p:[0], na:2}]
+  describe "number" $ do
+    it "Adds a number" $ do
+      shouldBe [j|3|] (apply [j|1|] [j|{p:[], na:2}|])
+      shouldBe [j|[3]|] (apply [j|[1]|] [j|{p:[0], na:2}|])
 
-  --   it "compresses two adds together in compose" $ do
-  --     shouldBe [{p:["a", "b"], na:3}], type.compose [{p:["a", "b"], na:1}], [{p:["a", "b"], na:2}]
-  --     shouldBe [{p:["a"], na:1}, {p:["b"], na:2}], type.compose [{p:["a"], na:1}], [{p:["b"], na:2}]
+    it "compresses two adds together in compose" $ do
+      shouldBe [j|{p:["a", "b"], na:3}|] (compose [j|{p:["a", "b"], na:1}|] [j|{p:["a", "b"], na:2}|])
+      -- shouldBe [j|{p:["a"], na:1}, {p:["b"], na:2}], type.compose [{p:["a"], na:1}], [{p:["b"], na:2}]
 
   --   it "doesn\"t overwrite values when it merges na in append" $ do
   --     rightHas = 21
