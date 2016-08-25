@@ -31,6 +31,7 @@ transform val1 val2 = (toJSON op1', toJSON op2')
       Left err -> error err
       Right x -> x
 
+-- for ghci
 d :: A.Value -> JSONOperation
 d jsonValue = op
   where

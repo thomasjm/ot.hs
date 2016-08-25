@@ -136,14 +136,16 @@ instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "si"
-                             return $ StringInsert path index str
+                             return $ if T.null str
+                               then Identity
+                               else StringInsert path index str
   parseJSON (A.Object v) | "sd" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              str <- v .: "sd"
-                             return $ StringDelete path index str
+                             return $ if T.null str
+                               then Identity
+                               else StringDelete path index str
   parseJSON _ = fail "Failed to parse operation"
-
-
 
 parsePathAndIndex :: A.Object -> A.Parser ([PathSegment], Int)
 parsePathAndIndex v = do
