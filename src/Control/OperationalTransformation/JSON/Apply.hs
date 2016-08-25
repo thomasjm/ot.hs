@@ -13,13 +13,12 @@ import Data.Monoid
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
-
 pathSegmentToTraversal (Pos x) = nth x
 pathSegmentToTraversal (Prop k) = key k
 
-pathToTraversal path = foldl (.) id $ [pathSegmentToTraversal x | x <- path]
+pathToTraversal path = foldl (.) id $ map pathSegmentToTraversal path
 
-listAtPath path = (pathToTraversal path) . _Array
+listAtPath   path = (pathToTraversal path) . _Array
 objectAtPath path = (pathToTraversal path) . _Object
 stringAtPath path = (pathToTraversal path) . _String
 numberAtPath path = (pathToTraversal path) . _Number

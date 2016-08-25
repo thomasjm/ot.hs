@@ -9,6 +9,7 @@ import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Data.List
+import qualified Data.Text as T
 import Data.String.Interpolate.IsString
 
 invertOperation = undefined
@@ -86,6 +87,18 @@ transformRight op1@(ListDelete listPath _ val) op2
       (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
       listPos@(Pos x) = last beginning
       path' = (init beginning) ++ [dec listPos] ++ rest
+
+transformRight op1@(StringInsert path i str) op2
+  | True = Right $ setPath path' op2
+    where
+      -- this ain't right but it maybe ain't too wrong :o
+      (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
+      prop@(Prop x) = last beginning
+      (pre, post) = T.splitAt i x
+      prop' = Prop $ pre `T.append` str `T.append` post
+      path' = (init beginning) ++ [prop'] ++ rest
+
+
 transformRight x y = Left [i|Not handled: #{x} affecting #{y}|]
 
 
