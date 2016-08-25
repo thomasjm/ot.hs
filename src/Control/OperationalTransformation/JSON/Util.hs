@@ -5,12 +5,14 @@ import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
 
 inc :: PathSegment -> PathSegment
-inc (Pos x) = Pos (x + 1)
-inc (Prop _) = error "Tried to increment a prop"
+inc = add 1
 
 dec :: PathSegment -> PathSegment
-dec (Pos x) = Pos (x - 1)
-dec (Prop _) = error "Tried to increment a prop"
+dec = add (-1)
+
+add :: Int -> PathSegment -> PathSegment
+add y (Pos x) = Pos (x + y)
+add _ (Prop _) = error "Tried to add to a prop"
 
 rev (a, b) = (b, a)
 
