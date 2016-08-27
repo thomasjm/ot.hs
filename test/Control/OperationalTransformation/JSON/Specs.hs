@@ -220,11 +220,11 @@ specs = do
       shouldBe [j|{p:[1], ld:"abc"}|] (transformLeft [j|{p:[1], ld:"a"}|] [j|{p:[1], t:"text0", o:[{p:1, i:"bc"}]}|])
 
     it "Puts the left op first if two inserts are simultaneous" $ do
-      shouldBe [j|{p:[1], li:"a"}|] (transformLeft [j|{p:[1], li:"a"}|] [j|{p:[1], li:"b"}|])
+      shouldBe [j|{p:[1], li:"a"}|] (transformLeft  [j|{p:[1], li:"a"}|] [j|{p:[1], li:"b"}|])
       shouldBe [j|{p:[2], li:"b"}|] (transformRight [j|{p:[1], li:"b"}|] [j|{p:[1], li:"a"}|])
 
     it "converts an attempt to re-delete a list element into a no-op" $ do
-      shouldBe [j|{}|] (transformLeft [j|{p:[1], ld:"x"}|] [j|{p:[1], ld:"x"}|])
+      shouldBe [j|{}|] (transformLeft  [j|{p:[1], ld:"x"}|] [j|{p:[1], ld:"x"}|])
       shouldBe [j|{}|] (transformRight [j|{p:[1], ld:"x"}|] [j|{p:[1], ld:"x"}|])
 
 

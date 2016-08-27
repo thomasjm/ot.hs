@@ -98,9 +98,7 @@ transformRight op1@(StringInsert path i str) op2
       prop' = Prop $ pre `T.append` str `T.append` post
       path' = (init beginning) ++ [prop'] ++ rest
 
-
 transformRight x y = Left [i|Not handled: #{x} affecting #{y}|]
-
 
 -- |In transformDouble, both operations affect the other
 transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
@@ -115,5 +113,11 @@ transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2
 transformDouble (ApplySubtypeOperation path1 typ1 op1) (ApplySubtypeOperation path2 typ2 op2) = case (C.transform op1 op2) of
   Left err -> Left err
   Right (op1', op2') -> Right (ApplySubtypeOperation path1 typ1 op1', ApplySubtypeOperation path2 typ2 op2')
+
+transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2)
+  |  path1 /=  path2 = error "Fatal: operations do not both affect each other"
+  |     i1 /=     i2 = error "Fatal: operations do not both affect each other"
+  | value1 /= value2 = error "Fatal: conflicting list elements to delete"
+  | otherwise = Right (Identity, Identity)
 
 transformDouble x y = Left [i|Not handled: #{x} and #{y}|]
