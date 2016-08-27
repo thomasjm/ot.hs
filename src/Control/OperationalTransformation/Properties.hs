@@ -51,15 +51,15 @@ genOp doc = do
 
 data Nat = Z | S !Nat deriving (Eq, Show)
 
-type One = S Z
-type Two = S One
-type Three = S Two
+type One = 'S 'Z
+type Two = 'S One
+type Three = 'S Two
 
 data DocHistory doc op :: Nat -> * where
   -- | Last state
-  LS :: doc -> DocHistory doc op Z
+  LS :: doc -> DocHistory doc op 'Z
   -- | Snapshot
-  SS :: doc -> op -> DocHistory doc op n -> DocHistory doc op (S n)
+  SS :: doc -> op -> DocHistory doc op n -> DocHistory doc op ('S n)
 
 deriving instance (Show doc, Show op) => Show (DocHistory doc op n)
 deriving instance (Eq doc, Eq op) => Eq (DocHistory doc op n)
@@ -80,10 +80,10 @@ snocDocHistory (LS doc) op doc' = SS doc op (LS doc')
 snocDocHistory (SS doc op dh) op' doc' = SS doc op (snocDocHistory dh op' doc')
 -}
 
-instance ArbitraryFor doc (DocHistory doc op Z) where
+instance ArbitraryFor doc (DocHistory doc op 'Z) where
   arbitraryFor = return . LS
 
-instance (OTSystem doc op, ArbitraryFor doc op, ArbitraryFor doc (DocHistory doc op n)) => ArbitraryFor doc (DocHistory doc op (S n)) where
+instance (OTSystem doc op, ArbitraryFor doc op, ArbitraryFor doc (DocHistory doc op n)) => ArbitraryFor doc (DocHistory doc op ('S n)) where
   arbitraryFor doc = do
     (op, doc') <- genOp doc
     SS doc op <$> arbitraryFor doc'
@@ -119,6 +119,7 @@ prop_compose_assoc (SS _doc a (SS _ b (SS _ c _))) =
   eitherResult (compose b c) $ \bc ->
   eitherResult (compose a bc) $ \abc2 ->
   abc1 ==? abc2
+prop_compose_assoc _ = error "Unhandled pattern match in prop_compose_assoc"
 
 -- | @(b ∘ a)(d) = a(b(d))@ where /a/ and /b/ are two consecutive operations
 -- and /d/ is the initial document.
@@ -132,6 +133,7 @@ prop_apply_functorial (SS doc a (SS _ b (LS _))) =
   eitherResult (compose a b) $ \ab ->
   eitherResult (apply ab doc) $ \doc''2 ->
   doc''1 ==? doc''2
+prop_apply_functorial _ = error "Unhandled pattern match in prop_apply_functorial"
 
 -- | @b'(a(d)) = a'(b(d))@ where /a/ and /b/ are random operations, /d/ is the
 -- initial document and @(a', b') = transform(a, b)@.
@@ -144,6 +146,7 @@ prop_transform_apply_comm (CDH (SS _ a (LS docA)) (SS _ b (LS docB))) =
   eitherResult (apply a' docB) $ \doc''1 ->
   eitherResult (apply b' docA) $ \doc''2 ->
   doc''1 ==? doc''2
+prop_transform_apply_comm _ = error "Unhandled pattern match in prop_transform_apply_comm"
 
 -- | @b' ∘ a = a' ∘ b@ where /a/ and /b/ are random operations and
 -- @(a', b') = transform(a, b)@. Note that this is a stronger property than
@@ -207,3 +210,5 @@ prop_transform_functorial (CDH (SS _ c _) (SS _ a (SS _ b _))) =
   eitherResult (transform c' b) $ \(_c''2, b') ->
   eitherResult (compose a' b') $ \abPrimed2 ->
   abPrimed1 ==? abPrimed2
+prop_transform_functorial _ = error "Unhandled pattern match in prop_transform_functorial"
+

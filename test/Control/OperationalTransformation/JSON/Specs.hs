@@ -4,7 +4,7 @@
 module Control.OperationalTransformation.JSON.Specs where
 
 import qualified Control.OperationalTransformation as C
-import Control.OperationalTransformation.JSON hiding (apply)
+import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
 import Test.Hspec
@@ -56,11 +56,11 @@ transform' val1 val2 = (op1', op2')
 -- TODO: these might be backwards, not sure yet
 transformLeft :: A.Value -> A.Value -> A.Value
 transformLeft a b = a'
-  where (a', b') = transform a b
+  where (a', _) = transform a b
 
 transformRight :: A.Value -> A.Value -> A.Value
 transformRight a b = a'
-  where (b', a') = transform b a
+  where (_, a') = transform b a
 
 specs :: SpecWith ()
 specs = do
