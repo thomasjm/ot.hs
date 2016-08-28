@@ -21,10 +21,22 @@ source-repository head
 Library
   Ghc-options:         -Wall
   Hs-source-dirs:      src, test
-  Exposed-modules:     Control.OperationalTransformation, Control.OperationalTransformation.List, Control.OperationalTransformation.Text, Control.OperationalTransformation.Selection, Control.OperationalTransformation.Properties, Control.OperationalTransformation.Client, Control.OperationalTransformation.Server
+  Exposed-modules:     Control.OperationalTransformation
+                     , Control.OperationalTransformation.List
+                     , Control.OperationalTransformation.Text
+                     , Control.OperationalTransformation.Selection
+                     , Control.OperationalTransformation.Properties
+                     , Control.OperationalTransformation.Client
+                     , Control.OperationalTransformation.Server
+                     , Control.OperationalTransformation.JSON
+                     , Control.OperationalTransformation.JSON.Transform
+                     , Control.OperationalTransformation.JSON.Apply
+                     , Control.OperationalTransformation.JSON.Compose
+                     , Control.OperationalTransformation.JSON.Types
+                     , Control.OperationalTransformation.JSON.Util
   Build-depends:       HUnit,
                        QuickCheck >= 2.7 && < 2.9,
-                       aeson >= 0.7 && < 0.11,
+                       aeson >= 0.7 && < 0.12,
                        aeson-qq,
                        attoparsec >= 0.10.1.1 && < 1,
                        base >= 4 && < 5,
