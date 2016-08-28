@@ -67,13 +67,8 @@ affects (ApplySubtypeOperation path1 _ _) (getPath -> path2) = path1 `isPrefixOf
 
 affects _ _ = False
 
-
-op1 = parseOp [j|{p:[0],ld:2}|]
-op2 = parseOp [j|{p:[0],li:1}|]
-
-
--- |In transformRight, the left operation affects the right operation.
--- So, transform the right operation properly and return it.
+-- | In transformRight, the left operation affects the right operation.
+-- So, transform the right operation properly and return it
 transformRight :: JSONOperation -> JSONOperation -> Either String JSONOperation
 transformRight op1@(ListInsert listPath _ val) op2
   | True = Right $ setPath path' op2 where
@@ -82,11 +77,15 @@ transformRight op1@(ListInsert listPath _ val) op2
       path' = (init beginning) ++ [inc listPos] ++ rest
 
 -- TODO: be able to distinguish <= from ==
-transformRight op1@(ListDelete listPath _ val) op2
-  | True = Right $ setPath path' op2 where
-      (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
-      listPos@(Pos x) = last beginning
-      path' = (init beginning) ++ [dec listPos] ++ rest
+transformRight op1@(ListDelete listPath i val) op2
+  | True = if x == i
+      then Right Identity -- LD deletes index op2 is trying to do something to; deletion
+                          -- takes priority
+      else Right $ setPath path' op2
+      where
+        (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
+        listPos@(Pos x) = last beginning
+        path' = (init beginning) ++ [dec listPos] ++ rest
 
 transformRight op1@(StringInsert path i str) op2
   | True = Right $ setPath path' op2
