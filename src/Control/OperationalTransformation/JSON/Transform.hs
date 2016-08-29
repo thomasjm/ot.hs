@@ -141,13 +141,23 @@ transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2
   | otherwise = Right (Identity, Identity)
 
 transformDouble op1@(StringInsert {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
--- We also assume `value` must be a string; this may be wrong?
-transformDouble op1@(ListDelete path1 i value) op2@(StringInsert path2 pos str)
-  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value -- TODO: lens this ∫µ∑√+?
+-- We also assume `value` must be a string; we should probably assert that(?)
+transformDouble op1@(ListDelete path1 i value) op2@(StringInsert {})
+  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
   where
     -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
     -- We use `[]` for the path because we're applying the operation to `value`, not to the
     -- entire JSON structure
-    op2' = StringInsert [] pos str
+    op2' = setPath [] op2
+
+transformDouble op1@(ApplySubtypeOperation {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
+transformDouble op1@(ListDelete path1 i1 value1) op2@(ApplySubtypeOperation {})
+  = (\v -> (ListDelete path1 i1 v, Identity)) <$> Ap.apply op2' value1
+  where
+    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
+    -- We use `[]` for the path because we're applying the operation to `value`, not to the
+    -- entire JSON structure
+    op2' = setPath [] op2
+
 
 transformDouble x y = Left [i|Not handled: #{x} and #{y}|]

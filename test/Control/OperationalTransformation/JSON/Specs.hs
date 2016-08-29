@@ -210,7 +210,6 @@ specs = do
       shouldBe [j|{p:[0],li:"x"}|] (transformLeft [j|{p:[0], li:"x"}|] [j|{p:[0], ld:"y"}|])
       shouldBe [j|{}|] (transformLeft [j|{p:[0],na:-3}|] [j|{p:[0],ld:48}|])
 
-
     it "converts ops on replaced elements to noops" $ do
       shouldBe [j|{}|] (transformLeft [j|{p:[1, 0], si:"hi"}|] [j|{p:[1], ld:"x", li:"y"}|])
       shouldBe [j|{}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:0, i:"hi"}]}|] [j|{p:[1], ld:"x", li:"y"}|])
