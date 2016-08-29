@@ -4,7 +4,7 @@
 module Control.OperationalTransformation.JSON.Specs where
 
 import qualified Control.OperationalTransformation as C
-import Control.OperationalTransformation.JSON hiding (apply)
+import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
 import Test.Hspec
@@ -56,11 +56,11 @@ transform' val1 val2 = (op1', op2')
 -- TODO: these might be backwards, not sure yet
 transformLeft :: A.Value -> A.Value -> A.Value
 transformLeft a b = a'
-  where (a', b') = transform a b
+  where (a', _) = transform a b
 
 transformRight :: A.Value -> A.Value -> A.Value
 transformRight a b = a'
-  where (b', a') = transform b a
+  where (_, a') = transform b a
 
 specs :: SpecWith ()
 specs = do
@@ -209,6 +209,7 @@ specs = do
       shouldBe [j|{}|] (transformLeft [j|{p:[1], t:"text0", o:{p:0, i:"hi"}}|] [j|{p:[1], ld:"x"}|])
       shouldBe [j|{p:[0],li:"x"}|] (transformLeft [j|{p:[0], li:"x"}|] [j|{p:[0], ld:"y"}|])
       shouldBe [j|{}|] (transformLeft [j|{p:[0],na:-3}|] [j|{p:[0],ld:48}|])
+
 
     it "converts ops on replaced elements to noops" $ do
       shouldBe [j|{}|] (transformLeft [j|{p:[1, 0], si:"hi"}|] [j|{p:[1], ld:"x", li:"y"}|])

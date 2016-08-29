@@ -26,10 +26,15 @@ instance OTOperation JSONOperation where
 
   -- Operations that both affect each other
   transform x y | x `affects` y && y `affects` x = transformDouble x y
+
   -- Operations where the left affects the right
+  -- since `x` is unaffected by `y`, `x'` is just `x`
   transform x y | x `affects` y = (x, ) <$> (transformRight x y)
+
   -- Operations where the right affects the left
+  -- since `y` is unaffected by `x`, `y'` is just `y`
   transform x y | y `affects` x = (, y) <$> (transformRight y x)
+
   -- Operations that don't affect each other
   transform x y = Right (x, y)
 

@@ -5,15 +5,19 @@ module Control.OperationalTransformation.JSON.Transform where
 
 
 import qualified Control.OperationalTransformation as C
+import qualified Control.OperationalTransformation.JSON.Apply as Ap
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Data.List
-import qualified Data.Text as T
 import Data.String.Interpolate.IsString
+import qualified Data.Text as T
+import Debug.Trace
 
 invertOperation = undefined
 
+swap :: (a, b) -> (b, a)
+swap (a, b) = (b, a)
 
 -- | Helper function to deal with list operations.
 -- Called when we know that (listPath `isPrefixOf` (getPath op)), so op operates on either
@@ -58,8 +62,15 @@ affects (ObjectReplace path1 key old new) (getPath -> path2) = path1 `isPrefixOf
 
 -- String inserts and deletes can only affect each other
 affects (StringInsert path1 pos1 s1) (StringInsert path2 pos2 s2) = pos1 <= pos2
-affects (StringInsert {}) _ = False
 affects (StringDelete path1 pos1 s1) (StringDelete path2 pos2 s2) = pos1 <= pos2
+affects (StringInsert path1 pos1 s1) (ListDelete path2 i value)
+  | null path1          = False -- this is a malformed SI?
+  | otherwise = init path1 == path2  -- trying to insert into an area being deleted?
+affects (StringDelete path1 pos1 s1) (ListDelete path2 i value)
+  | null path1          = False -- this is a malformed SD?
+  | otherwise = init path1 == path2  -- trying to delete into an area being deleted?
+
+affects (StringInsert {}) _ = False
 affects (StringDelete {}) _ = False
 
 -- Subtype operations could technically do anything...
@@ -67,13 +78,11 @@ affects (ApplySubtypeOperation path1 _ _) (getPath -> path2) = path1 `isPrefixOf
 
 affects _ _ = False
 
-
 op1 = parseOp [j|{p:[0],ld:2}|]
 op2 = parseOp [j|{p:[0],li:1}|]
 
-
--- |In transformRight, the left operation affects the right operation.
--- So, transform the right operation properly and return it.
+-- | In transformRight, the left operation affects the right operation.
+-- So, transform the right operation properly and return it
 transformRight :: JSONOperation -> JSONOperation -> Either String JSONOperation
 transformRight op1@(ListInsert listPath _ val) op2
   | True = Right $ setPath path' op2 where
@@ -82,11 +91,17 @@ transformRight op1@(ListInsert listPath _ val) op2
       path' = (init beginning) ++ [inc listPos] ++ rest
 
 -- TODO: be able to distinguish <= from ==
-transformRight op1@(ListDelete listPath _ val) op2
-  | True = Right $ setPath path' op2 where
-      (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
-      listPos@(Pos x) = last beginning
-      path' = (init beginning) ++ [dec listPos] ++ rest
+transformRight op1@(ListDelete listPath i val) op2
+  | True = if x == i
+      then Right Identity -- LD deletes index op2 is trying to do something to; deletion
+                          -- takes priority
+                          -- TODO: takes priority over ALL other ops? Should do something more
+                          -- general here?
+      else Right $ setPath path' op2
+      where
+        (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
+        listPos@(Pos x) = last beginning
+        path' = (init beginning) ++ [dec listPos] ++ rest
 
 transformRight op1@(StringInsert path i str) op2
   | True = Right $ setPath path' op2
@@ -98,9 +113,7 @@ transformRight op1@(StringInsert path i str) op2
       prop' = Prop $ pre `T.append` str `T.append` post
       path' = (init beginning) ++ [prop'] ++ rest
 
-
 transformRight x y = Left [i|Not handled: #{x} affecting #{y}|]
-
 
 -- |In transformDouble, both operations affect the other
 transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
@@ -115,5 +128,20 @@ transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2
 transformDouble (ApplySubtypeOperation path1 typ1 op1) (ApplySubtypeOperation path2 typ2 op2) = case (C.transform op1 op2) of
   Left err -> Left err
   Right (op1', op2') -> Right (ApplySubtypeOperation path1 typ1 op1', ApplySubtypeOperation path2 typ2 op2')
+
+transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2)
+  | op1 /= op2 = error "Fatal: operations do not both affect each other"
+  | otherwise = Right (Identity, Identity)
+
+-- both ops affect each other, so we can assume `path1 = path2 ++ [pos]`
+-- also `value` must be a string
+transformDouble op1@(StringInsert {}) op2@(ListDelete {}) = swap <$> transformDouble op2 op1
+transformDouble op1@(ListDelete path1 i value) op2@(StringInsert path2 pos str)
+  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value
+  where
+    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
+    -- We use `[]` for the path because we're applying the operation to `value`, not to the
+    -- entire JSON structure
+    op2' = StringInsert [] pos str
 
 transformDouble x y = Left [i|Not handled: #{x} and #{y}|]

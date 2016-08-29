@@ -5,7 +5,7 @@ module Control.OperationalTransformation.JSON.Apply where
 import Control.Lens hiding (Identity)
 import Control.OperationalTransformation as OT
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
-import Control.OperationalTransformation.JSON.Transform ()
+-- import Control.OperationalTransformation.JSON.Transform ()
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
 import Data.Aeson.Lens
