@@ -113,15 +113,15 @@ instance FromJSON JSONOperation where
   parseJSON (A.Object v) | "na" `elem` (HM.keys v) = Add <$> v .: "p" <*> v .: "na"
 
   -- Lists
-  parseJSON (A.Object v) | "li" `elem` (HM.keys v) = do
-                             (path, index) <- parsePathAndIndex v
-                             obj <- v .: "li"
-                             return $ ListInsert path index obj
   parseJSON (A.Object v) | "ld" `elem` (HM.keys v) && "li" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              before <- v .: "ld"
                              after <- v .: "li"
                              return $ ListReplace path index before after
+  parseJSON (A.Object v) | "li" `elem` (HM.keys v) = do
+                             (path, index) <- parsePathAndIndex v
+                             obj <- v .: "li"
+                             return $ ListInsert path index obj
   parseJSON (A.Object v) | "ld" `elem` (HM.keys v) = do
                              (path, index) <- parsePathAndIndex v
                              obj <- v .: "ld"
@@ -132,15 +132,15 @@ instance FromJSON JSONOperation where
                              return $ ListMove path index1 index2
 
   -- Objects
-  parseJSON (A.Object v) | "oi" `elem` (HM.keys v) = do
-                             (path, prop) <- parsePathAndProp v
-                             obj <- v .: "oi"
-                             return $ ObjectInsert path prop obj
   parseJSON (A.Object v) | "od" `elem` (HM.keys v) && "oi" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              before <- v .: "od"
                              after <- v .: "oi"
                              return $ ObjectReplace path prop before after
+  parseJSON (A.Object v) | "oi" `elem` (HM.keys v) = do
+                             (path, prop) <- parsePathAndProp v
+                             obj <- v .: "oi"
+                             return $ ObjectInsert path prop obj
   parseJSON (A.Object v) | "od" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              obj <- v .: "od"

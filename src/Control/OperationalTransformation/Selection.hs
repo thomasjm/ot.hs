@@ -10,6 +10,7 @@ module Control.OperationalTransformation.Selection
   ) where
 
 import Control.OperationalTransformation
+import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.Text
 import Data.Aeson
 import Data.List (sort)
@@ -50,12 +51,19 @@ instance OTCursor Range TextOperation where
             _ -> newIndex -- matching on `[]` gives a non-exhaustive pattern
                           -- match warning for some reason
 
+-- TODO: implement this
+instance OTCursor Range JSONOperation where
+  updateCursor _ (Range a h) = (Range a h)
+
 -- | A selection consists of a list of ranges. Each range may represent a
 -- selected part of the document or a cursor in the document.
 newtype Selection = Selection { ranges :: [Range] }
   deriving (Monoid, Show, Read)
 
 instance OTCursor Selection TextOperation where
+  updateCursor op = Selection . updateCursor op . ranges
+
+instance OTCursor Selection JSONOperation where
   updateCursor op = Selection . updateCursor op . ranges
 
 instance Eq Selection where
