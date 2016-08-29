@@ -150,6 +150,16 @@ transformDouble op1@(ListDelete path1 i value) op2@(StringInsert {})
     -- entire JSON structure
     op2' = setPath [] op2
 
+transformDouble op1@(StringDelete {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
+-- We also assume `value` must be a string; we should probably assert that(?)
+transformDouble op1@(ListDelete path1 i value) op2@(StringDelete {})
+  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
+  where
+    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
+    -- We use `[]` for the path because we're applying the operation to `value`, not to the
+    -- entire JSON structure
+    op2' = setPath [] op2
+
 transformDouble op1@(ApplySubtypeOperation {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
 transformDouble op1@(ListDelete path1 i1 value1) op2@(ApplySubtypeOperation {})
   = (\v -> (ListDelete path1 i1 v, Identity)) <$> Ap.apply op2' value1
