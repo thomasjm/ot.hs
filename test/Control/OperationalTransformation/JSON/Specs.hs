@@ -228,215 +228,215 @@ specs = do
       shouldBe [j|{}|] (transformRight [j|{p:[1], ld:"x"}|] [j|{p:[1], ld:"x"}|])
 
 
-  --   describe "#compose()" $ do
-  --     it "composes insert then delete into a no-op" $ do
-  --       shouldBe [], type.compose [{p:[1], li:"abc"}], [{p:[1], ld:"abc"}]
-  --       shouldBe [{p:[1],ld:null,li:"x"}], type.transform [{p:[0],ld:null,li:"x"}], [{p:[0],li:"The"}], "right"
+    describe "#compose()" $ do
+      it "composes insert then delete into a no-op" $ do
+        shouldBe [j|{}|] (compose [j|{p:[1], li:"abc"}|] [j|{p:[1], ld:"abc"}|])
+        shouldBe [j|{p:[1],ld:null,li:"x"}|] (transformRight [j|{p:[0],ld:null,li:"x"}|] [j|{p:[0],li:"The"}|])
 
-  --     it "doesn\"t change the original object" $ do
-  --       a = [{p:[0],ld:"abc",li:null}]
-  --       shouldBe [{p:[0],ld:"abc"}], type.compose a, [{p:[0],ld:null}]
-  --       shouldBe [{p:[0],ld:"abc",li:null}], a
+      it "doesn\"t change the original object" $ do
+        let a = [j|{p:[0],ld:"abc",li:null}|]
+        shouldBe [j|{p:[0],ld:"abc"}|] (compose a [j|{p:[0],ld:null}|])
+        shouldBe [j|{p:[0],ld:"abc",li:null}|] a
 
-  --     it "composes together adjacent string ops" $ do
-  --       shouldBe [{p:[100], si:"hi"}], type.compose [{p:[100], si:"h"}], [{p:[101], si:"i"}]
-  --       shouldBe [{p:[], t:"text0", o:[{p:100, i:"hi"}]}], type.compose [{p:[], t:"text0", o:[{p:100, i:"h"}]}], [{p:[], t:"text0", o:[{p:101, i:"i"}]}]
+      it "composes together adjacent string ops" $ do
+        shouldBe [j|{p:[100], si:"hi"}|] (compose [j|{p:[100], si:"h"}|] [j|{p:[101], si:"i"}|])
+        shouldBe [j|{p:[], t:"text0", o:{p:100, i:"hi"}}|] (compose [j|{p:[], t:"text0", o:{p:100, i:"h"}}|] [j|{p:[], t:"text0", o:[{p:101, i:"i"}]}|])
 
-  --   it "moves ops on a moved element with the element" $ do
-  --     shouldBe [{p:[10], ld:"x"}], type.transform [{p:[4], ld:"x"}], [{p:[4], lm:10}], "left"
-  --     shouldBe [{p:[10, 1], si:"a"}], type.transform [{p:[4, 1], si:"a"}], [{p:[4], lm:10}], "left"
-  --     shouldBe [{p:[10], t:"text0", o:[{p:1, i:"a"}]}], type.transform [{p:[4], t:"text0", o:[{p:1, i:"a"}]}], [{p:[4], lm:10}], "left"
-  --     shouldBe [{p:[10, 1], li:"a"}], type.transform [{p:[4, 1], li:"a"}], [{p:[4], lm:10}], "left"
-  --     shouldBe [{p:[10, 1], ld:"b", li:"a"}], type.transform [{p:[4, 1], ld:"b", li:"a"}], [{p:[4], lm:10}], "left"
+    it "moves ops on a moved element with the element" $ do
+      shouldBe [j|{p:[10], ld:"x"}|] (transformLeft [j|{p:[4], ld:"x"}|] [j|{p:[4], lm:10}|])
+      shouldBe [j|{p:[10, 1], si:"a"}|] (transformLeft [j|{p:[4, 1], si:"a"}|] [j|{p:[4], lm:10}|])
+      shouldBe [j|{p:[10], t:"text0", o:{p:1, i:"a"}}|] (transformLeft [j|{p:[4], t:"text0", o:{p:1, i:"a"}}|] [j|{p:[4], lm:10}|])
+      shouldBe [j|{p:[10, 1], li:"a"}|] (transformLeft [j|{p:[4, 1], li:"a"}|] [j|{p:[4], lm:10}|])
+      shouldBe [j|{p:[10, 1], ld:"b", li:"a"}|] (transformLeft [j|{p:[4, 1], ld:"b", li:"a"}|] [j|{p:[4], lm:10}|])
 
-  --     shouldBe [{p:[0],li:null}], type.transform [{p:[0],li:null}], [{p:[0],lm:1}], "left"
-  --     # [_,_,_,_,5,6,7,_]
-  --     # c: [_,_,_,_,5,"x",6,7,_]   p:5 li:"x"
-  --     # s: [_,6,_,_,_,5,7,_]       p:5 lm:1
-  --     # correct: [_,6,_,_,_,5,"x",7,_]
-  --     shouldBe [{p:[6],li:"x"}], type.transform [{p:[5],li:"x"}], [{p:[5],lm:1}], "left"
-  --     # [_,_,_,_,5,6,7,_]
-  --     # c: [_,_,_,_,5,6,7,_]  p:5 ld:6
-  --     # s: [_,6,_,_,_,5,7,_]  p:5 lm:1
-  --     # correct: [_,_,_,_,5,7,_]
-  --     shouldBe [{p:[1],ld:6}], type.transform [{p:[5],ld:6}], [{p:[5],lm:1}], "left"
-  --     #shouldBe [{p:[0],li:{}}], type.transform [{p:[0],li:{}}], [{p:[0],lm:0}], "right"
-  --     shouldBe [{p:[0],li:[]}], type.transform [{p:[0],li:[]}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[2],li:"x"}], type.transform [{p:[2],li:"x"}], [{p:[0],lm:1}], "left"
+      shouldBe [j|{p:[0],li:null}|] (transformLeft [j|{p:[0],li:null}|] [j|{p:[0],lm:1}|])
+      -- [_,_,_,_,5,6,7,_]
+      -- c: [_,_,_,_,5,"x",6,7,_]   p:5 li:"x"
+      -- s: [_,6,_,_,_,5,7,_]       p:5 lm:1
+      -- correct: [_,6,_,_,_,5,"x",7,_]
+      shouldBe [j|{p:[6],li:"x"}|] (transformLeft [j|{p:[5],li:"x"}|] [j|{p:[5],lm:1}|])
+      -- [_,_,_,_,5,6,7,_]
+      -- c: [_,_,_,_,5,6,7,_]  p:5 ld:6
+      -- s: [_,6,_,_,_,5,7,_]  p:5 lm:1
+      -- correct: [_,_,_,_,5,7,_]
+      shouldBe [j|{p:[1],ld:6}|] (transformLeft [j|{p:[5],ld:6}|] [j|{p:[5],lm:1}|])
+      -- shouldBe [j|{p:[0],li:{}}|] (transformRight [j|{p:[0],li:{}}|] [j|{p:[0],lm:0}|])
+      shouldBe [j|{p:[0],li:[]}|] (transformLeft [j|{p:[0],li:[]}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[2],li:"x"}|] (transformLeft [j|{p:[2],li:"x"}|] [j|{p:[0],lm:1}|])
 
-  --   it "moves target index on ld/li" $ do
-  --     shouldBe [{p:[0],lm:1}], type.transform [{p:[0], lm: 2}], [{p:[1], ld:"x"}], "left"
-  --     shouldBe [{p:[1],lm:3}], type.transform [{p:[2], lm: 4}], [{p:[1], ld:"x"}], "left"
-  --     shouldBe [{p:[0],lm:3}], type.transform [{p:[0], lm: 2}], [{p:[1], li:"x"}], "left"
-  --     shouldBe [{p:[3],lm:5}], type.transform [{p:[2], lm: 4}], [{p:[1], li:"x"}], "left"
-  --     shouldBe [{p:[1],lm:1}], type.transform [{p:[0], lm: 0}], [{p:[0], li:28}], "left"
+    it "moves target index on ld/li" $ do
+      shouldBe [j|{p:[0],lm:1}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[1], ld:"x"}|])
+      shouldBe [j|{p:[1],lm:3}|] (transformLeft [j|{p:[2], lm: 4}|] [j|{p:[1], ld:"x"}|])
+      shouldBe [j|{p:[0],lm:3}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[1], li:"x"}|])
+      shouldBe [j|{p:[3],lm:5}|] (transformLeft [j|{p:[2], lm: 4}|] [j|{p:[1], li:"x"}|])
+      shouldBe [j|{p:[1],lm:1}|] (transformLeft [j|{p:[0], lm: 0}|] [j|{p:[0], li:28}|])
 
-  --   it "tiebreaks lm vs. ld/li" $ do
-  --     shouldBe [], type.transform [{p:[0], lm: 2}], [{p:[0], ld:"x"}], "left"
-  --     shouldBe [], type.transform [{p:[0], lm: 2}], [{p:[0], ld:"x"}], "right"
-  --     shouldBe [{p:[1], lm:3}], type.transform [{p:[0], lm: 2}], [{p:[0], li:"x"}], "left"
-  --     shouldBe [{p:[1], lm:3}], type.transform [{p:[0], lm: 2}], [{p:[0], li:"x"}], "right"
+    it "tiebreaks lm vs. ld/li" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[0], ld:"x"}|])
+      shouldBe [j|{}|] (transformRight [j|{p:[0], lm: 2}|] [j|{p:[0], ld:"x"}|])
+      shouldBe [j|{p:[1], lm:3}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[0], li:"x"}|])
+      shouldBe [j|{p:[1], lm:3}|] (transformRight [j|{p:[0], lm: 2}|] [j|{p:[0], li:"x"}|])
 
-  --   it "replacement vs. deletion" $ do
-  --     shouldBe [{p:[0],li:"y"}], type.transform [{p:[0],ld:"x",li:"y"}], [{p:[0],ld:"x"}], "right"
+    it "replacement vs. deletion" $ do
+      shouldBe [j|{p:[0],li:"y"}|] (transformRight [j|{p:[0],ld:"x",li:"y"}|] [j|{p:[0],ld:"x"}|])
 
-  --   it "replacement vs. insertion" $ do
-  --     shouldBe [{p:[1],ld:{},li:"brillig"}], type.transform [{p:[0],ld:{},li:"brillig"}], [{p:[0],li:36}], "left"
+    it "replacement vs. insertion" $ do
+      shouldBe [j|{p:[1],ld:{},li:"brillig"}|] (transformLeft [j|{p:[0],ld:{},li:"brillig"}|] [j|{p:[0],li:36}|])
 
-  --   it "replacement vs. replacement" $ do
-  --     shouldBe [], type.transform [{p:[0],ld:null,li:[]}], [{p:[0],ld:null,li:0}], "right"
-  --     shouldBe [{p:[0],ld:[],li:0}], type.transform [{p:[0],ld:null,li:0}], [{p:[0],ld:null,li:[]}], "left"
+    it "replacement vs. replacement" $ do
+      shouldBe [j|{}|] (transformRight [j|{p:[0],ld:null,li:[]}|] [j|{p:[0],ld:null,li:0}|])
+      shouldBe [j|{p:[0],ld:[],li:0}|] (transformLeft [j|{p:[0],ld:null,li:0}|] [j|{p:[0],ld:null,li:[]}|])
 
-  --   it "composes replace with delete of replaced element results in insert" $ do
-  --     shouldBe [{p:[2],ld:[]}], type.compose [{p:[2],ld:[],li:null}], [{p:[2],ld:null}]
+    it "composes replace with delete of replaced element results in insert" $ do
+      shouldBe [j|{p:[2],ld:[]}|] (compose [j|{p:[2],ld:[],li:null}|] [j|{p:[2],ld:null}|])
 
-  --   it "lm vs lm" $ do
-  --     shouldBe [{p:[0],lm:2}], type.transform [{p:[0],lm:2}], [{p:[2],lm:1}], "left"
-  --     shouldBe [{p:[4],lm:4}], type.transform [{p:[3],lm:3}], [{p:[5],lm:0}], "left"
-  --     shouldBe [{p:[2],lm:0}], type.transform [{p:[2],lm:0}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[2],lm:1}], type.transform [{p:[2],lm:0}], [{p:[1],lm:0}], "right"
-  --     shouldBe [{p:[3],lm:1}], type.transform [{p:[2],lm:0}], [{p:[5],lm:0}], "right"
-  --     shouldBe [{p:[3],lm:0}], type.transform [{p:[2],lm:0}], [{p:[5],lm:0}], "left"
-  --     shouldBe [{p:[0],lm:5}], type.transform [{p:[2],lm:5}], [{p:[2],lm:0}], "left"
-  --     shouldBe [{p:[0],lm:5}], type.transform [{p:[2],lm:5}], [{p:[2],lm:0}], "left"
-  --     shouldBe [{p:[0],lm:0}], type.transform [{p:[1],lm:0}], [{p:[0],lm:5}], "right"
-  --     shouldBe [{p:[0],lm:0}], type.transform [{p:[1],lm:0}], [{p:[0],lm:1}], "right"
-  --     shouldBe [{p:[1],lm:1}], type.transform [{p:[0],lm:1}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[1],lm:2}], type.transform [{p:[0],lm:1}], [{p:[5],lm:0}], "right"
-  --     shouldBe [{p:[3],lm:2}], type.transform [{p:[2],lm:1}], [{p:[5],lm:0}], "right"
-  --     shouldBe [{p:[2],lm:1}], type.transform [{p:[3],lm:1}], [{p:[1],lm:3}], "left"
-  --     shouldBe [{p:[2],lm:3}], type.transform [{p:[1],lm:3}], [{p:[3],lm:1}], "left"
-  --     shouldBe [{p:[2],lm:6}], type.transform [{p:[2],lm:6}], [{p:[0],lm:1}], "left"
-  --     shouldBe [{p:[2],lm:6}], type.transform [{p:[2],lm:6}], [{p:[0],lm:1}], "right"
-  --     shouldBe [{p:[2],lm:6}], type.transform [{p:[2],lm:6}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[2],lm:6}], type.transform [{p:[2],lm:6}], [{p:[1],lm:0}], "right"
-  --     shouldBe [{p:[0],lm:2}], type.transform [{p:[0],lm:1}], [{p:[2],lm:1}], "left"
-  --     shouldBe [{p:[2],lm:0}], type.transform [{p:[2],lm:1}], [{p:[0],lm:1}], "right"
-  --     shouldBe [{p:[1],lm:1}], type.transform [{p:[0],lm:0}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[0],lm:0}], type.transform [{p:[0],lm:1}], [{p:[1],lm:3}], "left"
-  --     shouldBe [{p:[3],lm:1}], type.transform [{p:[2],lm:1}], [{p:[3],lm:2}], "left"
-  --     shouldBe [{p:[3],lm:3}], type.transform [{p:[3],lm:2}], [{p:[2],lm:1}], "left"
+    it "lm vs lm" $ do
+      shouldBe [j|{p:[0],lm:2}|] (transformLeft [j|{p:[0],lm:2}|] [j|{p:[2],lm:1}|])
+      shouldBe [j|{p:[4],lm:4}|] (transformLeft [j|{p:[3],lm:3}|] [j|{p:[5],lm:0}|])
+      shouldBe [j|{p:[2],lm:0}|] (transformLeft [j|{p:[2],lm:0}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[2],lm:1}|] (transformRight [j|{p:[2],lm:0}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[3],lm:1}|] (transformRight [j|{p:[2],lm:0}|] [j|{p:[5],lm:0}|])
+      shouldBe [j|{p:[3],lm:0}|] (transformLeft [j|{p:[2],lm:0}|] [j|{p:[5],lm:0}|])
+      shouldBe [j|{p:[0],lm:5}|] (transformLeft [j|{p:[2],lm:5}|] [j|{p:[2],lm:0}|])
+      shouldBe [j|{p:[0],lm:5}|] (transformLeft [j|{p:[2],lm:5}|] [j|{p:[2],lm:0}|])
+      shouldBe [j|{p:[0],lm:0}|] (transformRight [j|{p:[1],lm:0}|] [j|{p:[0],lm:5}|])
+      shouldBe [j|{p:[0],lm:0}|] (transformRight [j|{p:[1],lm:0}|] [j|{p:[0],lm:1}|])
+      shouldBe [j|{p:[1],lm:1}|] (transformLeft [j|{p:[0],lm:1}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[1],lm:2}|] (transformRight [j|{p:[0],lm:1}|] [j|{p:[5],lm:0}|])
+      shouldBe [j|{p:[3],lm:2}|] (transformRight [j|{p:[2],lm:1}|] [j|{p:[5],lm:0}|])
+      shouldBe [j|{p:[2],lm:1}|] (transformLeft [j|{p:[3],lm:1}|] [j|{p:[1],lm:3}|])
+      shouldBe [j|{p:[2],lm:3}|] (transformLeft [j|{p:[1],lm:3}|] [j|{p:[3],lm:1}|])
+      shouldBe [j|{p:[2],lm:6}|] (transformLeft [j|{p:[2],lm:6}|] [j|{p:[0],lm:1}|])
+      shouldBe [j|{p:[2],lm:6}|] (transformRight [j|{p:[2],lm:6}|] [j|{p:[0],lm:1}|])
+      shouldBe [j|{p:[2],lm:6}|] (transformLeft [j|{p:[2],lm:6}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[2],lm:6}|] (transformRight [j|{p:[2],lm:6}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[0],lm:2}|] (transformLeft [j|{p:[0],lm:1}|] [j|{p:[2],lm:1}|])
+      shouldBe [j|{p:[2],lm:0}|] (transformRight [j|{p:[2],lm:1}|] [j|{p:[0],lm:1}|])
+      shouldBe [j|{p:[1],lm:1}|] (transformLeft [j|{p:[0],lm:0}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[0],lm:0}|] (transformLeft [j|{p:[0],lm:1}|] [j|{p:[1],lm:3}|])
+      shouldBe [j|{p:[3],lm:1}|] (transformLeft [j|{p:[2],lm:1}|] [j|{p:[3],lm:2}|])
+      shouldBe [j|{p:[3],lm:3}|] (transformLeft [j|{p:[3],lm:2}|] [j|{p:[2],lm:1}|])
 
-  --   it "changes indices correctly around a move" $ do
-  --     shouldBe [{p:[1,0],li:{}}], type.transform [{p:[0,0],li:{}}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[0],lm:0}], type.transform [{p:[1],lm:0}], [{p:[0],ld:{}}], "left"
-  --     shouldBe [{p:[0],lm:0}], type.transform [{p:[0],lm:1}], [{p:[1],ld:{}}], "left"
-  --     shouldBe [{p:[5],lm:0}], type.transform [{p:[6],lm:0}], [{p:[2],ld:{}}], "left"
-  --     shouldBe [{p:[1],lm:0}], type.transform [{p:[1],lm:0}], [{p:[2],ld:{}}], "left"
-  --     shouldBe [{p:[1],lm:1}], type.transform [{p:[2],lm:1}], [{p:[1],ld:3}], "right"
+    it "changes indices correctly around a move" $ do
+      shouldBe [j|{p:[1,0],li:{}}|] (transformLeft [j|{p:[0,0],li:{}}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[0],lm:0}|] (transformLeft [j|{p:[1],lm:0}|] [j|{p:[0],ld:{}}|])
+      shouldBe [j|{p:[0],lm:0}|] (transformLeft [j|{p:[0],lm:1}|] [j|{p:[1],ld:{}}|])
+      shouldBe [j|{p:[5],lm:0}|] (transformLeft [j|{p:[6],lm:0}|] [j|{p:[2],ld:{}}|])
+      shouldBe [j|{p:[1],lm:0}|] (transformLeft [j|{p:[1],lm:0}|] [j|{p:[2],ld:{}}|])
+      shouldBe [j|{p:[1],lm:1}|] (transformRight [j|{p:[2],lm:1}|] [j|{p:[1],ld:3}|])
 
-  --     shouldBe [{p:[1],ld:{}}], type.transform [{p:[2],ld:{}}], [{p:[1],lm:2}], "right"
-  --     shouldBe [{p:[2],ld:{}}], type.transform [{p:[1],ld:{}}], [{p:[2],lm:1}], "left"
-
-
-  --     shouldBe [{p:[0],ld:{}}], type.transform [{p:[1],ld:{}}], [{p:[0],lm:1}], "right"
-
-  --     shouldBe [{p:[0],ld:1,li:2}], type.transform [{p:[1],ld:1,li:2}], [{p:[1],lm:0}], "left"
-  --     shouldBe [{p:[0],ld:2,li:3}], type.transform [{p:[1],ld:2,li:3}], [{p:[0],lm:1}], "left"
-  --     shouldBe [{p:[1],ld:3,li:4}], type.transform [{p:[0],ld:3,li:4}], [{p:[1],lm:0}], "left"
-
-  --   it "li vs lm" $ do
-  --     li = (p) -> [{p:[p],li:[]}]
-  --     lm = (f,t) -> [{p:[f],lm:t}]
-  --     xf = type.transform
-
-  --     shouldBe (li 0), xf (li 0), (lm 1, 3), "left"
-  --     shouldBe (li 1), xf (li 1), (lm 1, 3), "left"
-  --     shouldBe (li 1), xf (li 2), (lm 1, 3), "left"
-  --     shouldBe (li 2), xf (li 3), (lm 1, 3), "left"
-  --     shouldBe (li 4), xf (li 4), (lm 1, 3), "left"
-
-  --     shouldBe (lm 2, 4), xf (lm 1, 3), (li 0), "right"
-  --     shouldBe (lm 2, 4), xf (lm 1, 3), (li 1), "right"
-  --     shouldBe (lm 1, 4), xf (lm 1, 3), (li 2), "right"
-  --     shouldBe (lm 1, 4), xf (lm 1, 3), (li 3), "right"
-  --     shouldBe (lm 1, 3), xf (lm 1, 3), (li 4), "right"
-
-  --     shouldBe (li 0), xf (li 0), (lm 1, 2), "left"
-  --     shouldBe (li 1), xf (li 1), (lm 1, 2), "left"
-  --     shouldBe (li 1), xf (li 2), (lm 1, 2), "left"
-  --     shouldBe (li 3), xf (li 3), (lm 1, 2), "left"
-
-  --     shouldBe (li 0), xf (li 0), (lm 3, 1), "left"
-  --     shouldBe (li 1), xf (li 1), (lm 3, 1), "left"
-  --     shouldBe (li 3), xf (li 2), (lm 3, 1), "left"
-  --     shouldBe (li 4), xf (li 3), (lm 3, 1), "left"
-  --     shouldBe (li 4), xf (li 4), (lm 3, 1), "left"
-
-  --     shouldBe (lm 4, 2), xf (lm 3, 1), (li 0), "right"
-  --     shouldBe (lm 4, 2), xf (lm 3, 1), (li 1), "right"
-  --     shouldBe (lm 4, 1), xf (lm 3, 1), (li 2), "right"
-  --     shouldBe (lm 4, 1), xf (lm 3, 1), (li 3), "right"
-  --     shouldBe (lm 3, 1), xf (lm 3, 1), (li 4), "right"
-
-  --     shouldBe (li 0), xf (li 0), (lm 2, 1), "left"
-  --     shouldBe (li 1), xf (li 1), (lm 2, 1), "left"
-  --     shouldBe (li 3), xf (li 2), (lm 2, 1), "left"
-  --     shouldBe (li 3), xf (li 3), (lm 2, 1), "left"
+      shouldBe [j|{p:[1],ld:{}}|] (transformRight [j|{p:[2],ld:{}}|] [j|{p:[1],lm:2}|])
+      shouldBe [j|{p:[2],ld:{}}|] (transformLeft [j|{p:[1],ld:{}}|] [j|{p:[2],lm:1}|])
 
 
-  -- describe "object" $ do
-  --   it "passes sanity checks" $ do
-  --     shouldBe {x:"a", y:"b"}, type.apply {x:"a"}, [{p:["y"], oi:"b"}]
-  --     shouldBe {}, type.apply {x:"a"}, [{p:["x"], od:"a"}]
-  --     shouldBe {x:"b"}, type.apply {x:"a"}, [{p:["x"], od:"a", oi:"b"}]
+      shouldBe [j|{p:[0],ld:{}}|] (transformRight [j|{p:[1],ld:{}}|] [j|{p:[0],lm:1}|])
 
-  --   it "Ops on deleted elements become noops" $ do
-  --     shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], od:"x"}], "left"
-  --     shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], od:"x"}], "left"
-  --     shouldBe [], type.transform [{p:[9],si:"bite "}], [{p:[],od:"agimble s",oi:null}], "right"
-  --     shouldBe [], type.transform [{p:[], t:"text0", o:[{p:9, i:"bite "}]}], [{p:[],od:"agimble s",oi:null}], "right"
+      shouldBe [j|{p:[0],ld:1,li:2}|] (transformLeft [j|{p:[1],ld:1,li:2}|] [j|{p:[1],lm:0}|])
+      shouldBe [j|{p:[0],ld:2,li:3}|] (transformLeft [j|{p:[1],ld:2,li:3}|] [j|{p:[0],lm:1}|])
+      shouldBe [j|{p:[1],ld:3,li:4}|] (transformLeft [j|{p:[0],ld:3,li:4}|] [j|{p:[1],lm:0}|])
 
-  --   it "Ops on replaced elements become noops" $ do
-  --     shouldBe [], type.transform [{p:[1, 0], si:"hi"}], [{p:[1], od:"x", oi:"y"}], "left"
-  --     shouldBe [], type.transform [{p:[1], t:"text0", o:[{p:0, i:"hi"}]}], [{p:[1], od:"x", oi:"y"}], "left"
+    it "li vs lm" $ do
+      let li = \(p :: Int) -> [j|{p:[#{p}], li:[]}|]
+      let lm :: Int -> Int -> A.Value
+          lm = \f t -> [j|{p:[#{f}], lm:#{t}}|]
 
-  --   it "Deleted data is changed to reflect edits" $ do
-  --     shouldBe [{p:[1], od:"abc"}], type.transform [{p:[1], od:"a"}], [{p:[1, 1], si:"bc"}], "left"
-  --     shouldBe [{p:[1], od:"abc"}], type.transform [{p:[1], od:"a"}], [{p:[1], t:"text0", o:[{p:1, i:"bc"}]}], "left"
-  --     shouldBe [{p:[],od:25,oi:[]}], type.transform [{p:[],od:22,oi:[]}], [{p:[],na:3}], "left"
-  --     shouldBe [{p:[],od:{toves:""},oi:4}], type.transform [{p:[],od:{toves:0},oi:4}], [{p:["toves"],od:0,oi:""}], "left"
-  --     shouldBe [{p:[],od:"thou an",oi:[]}], type.transform [{p:[],od:"thou and ",oi:[]}], [{p:[7],sd:"d "}], "left"
-  --     shouldBe [{p:[],od:"thou an",oi:[]}], type.transform [{p:[],od:"thou and ",oi:[]}], [{p:[], t:"text0", o:[{p:7, d:"d "}]}], "left"
-  --     shouldBe [], type.transform([{p:["bird"],na:2}], [{p:[],od:{bird:38},oi:20}], "right")
-  --     shouldBe [{p:[],od:{bird:40},oi:20}], type.transform([{p:[],od:{bird:38},oi:20}], [{p:["bird"],na:2}], "left")
-  --     shouldBe [{p:["He"],od:[]}], type.transform [{p:["He"],od:[]}], [{p:["The"],na:-3}], "right"
-  --     shouldBe [], type.transform [{p:["He"],oi:{}}], [{p:[],od:{},oi:"the"}], "left"
+      shouldBe (li 0) (transformLeft (li 0) (lm 1 3))
+      shouldBe (li 1) (transformLeft (li 1) (lm 1 3))
+      shouldBe (li 1) (transformLeft (li 2) (lm 1 3))
+      shouldBe (li 2) (transformLeft (li 3) (lm 1 3))
+      shouldBe (li 4) (transformLeft (li 4) (lm 1 3))
 
-  --   it "If two inserts are simultaneous, the lefts insert will win" $ do
-  --     shouldBe [{p:[1], oi:"a", od:"b"}], type.transform [{p:[1], oi:"a"}], [{p:[1], oi:"b"}], "left"
-  --     shouldBe [], type.transform [{p:[1], oi:"b"}], [{p:[1], oi:"a"}], "right"
+      shouldBe (lm 2 4) (transformRight (lm 1 3) (li 0))
+      shouldBe (lm 2 4) (transformRight (lm 1 3) (li 1))
+      shouldBe (lm 1 4) (transformRight (lm 1 3) (li 2))
+      shouldBe (lm 1 4) (transformRight (lm 1 3) (li 3))
+      shouldBe (lm 1 3) (transformRight (lm 1 3) (li 4))
 
-  --   it "parallel ops on different keys miss each other" $ do
-  --     shouldBe [{p:["a"], oi: "x"}], type.transform [{p:["a"], oi:"x"}], [{p:["b"], oi:"z"}], "left"
-  --     shouldBe [{p:["a"], oi: "x"}], type.transform [{p:["a"], oi:"x"}], [{p:["b"], od:"z"}], "left"
-  --     shouldBe [{p:["in","he"],oi:{}}], type.transform [{p:["in","he"],oi:{}}], [{p:["and"],od:{}}], "right"
-  --     shouldBe [{p:["x",0],si:"his "}], type.transform [{p:["x",0],si:"his "}], [{p:["y"],od:0,oi:1}], "right"
-  --     shouldBe [{p:["x"], t:"text0", o:[{p:0, i:"his "}]}], type.transform [{p:["x"],t:"text0", o:[{p:0, i:"his "}]}], [{p:["y"],od:0,oi:1}], "right"
+      shouldBe (li 0) (transformLeft (li 0) (lm 1 2))
+      shouldBe (li 1) (transformLeft (li 1) (lm 1 2))
+      shouldBe (li 1) (transformLeft (li 2) (lm 1 2))
+      shouldBe (li 3) (transformLeft (li 3) (lm 1 2))
 
-  --   it "replacement vs. deletion" $ do
-  --     shouldBe [{p:[],oi:{}}], type.transform [{p:[],od:[""],oi:{}}], [{p:[],od:[""]}], "right"
+      shouldBe (li 0) (transformLeft (li 0) (lm 3 1))
+      shouldBe (li 1) (transformLeft (li 1) (lm 3 1))
+      shouldBe (li 3) (transformLeft (li 2) (lm 3 1))
+      shouldBe (li 4) (transformLeft (li 3) (lm 3 1))
+      shouldBe (li 4) (transformLeft (li 4) (lm 3 1))
 
-  --   it "replacement vs. replacement" $ do
-  --     shouldBe [],                     type.transform [{p:[],od:[""]},{p:[],oi:{}}], [{p:[],od:[""]},{p:[],oi:null}], "right"
-  --     shouldBe [{p:[],od:null,oi:{}}], type.transform [{p:[],od:[""]},{p:[],oi:{}}], [{p:[],od:[""]},{p:[],oi:null}], "left"
-  --     shouldBe [],                     type.transform [{p:[],od:[""],oi:{}}], [{p:[],od:[""],oi:null}], "right"
-  --     shouldBe [{p:[],od:null,oi:{}}], type.transform [{p:[],od:[""],oi:{}}], [{p:[],od:[""],oi:null}], "left"
+      shouldBe (lm 4 2) (transformRight (lm 3 1) (li 0))
+      shouldBe (lm 4 2) (transformRight (lm 3 1) (li 1))
+      shouldBe (lm 4 1) (transformRight (lm 3 1) (li 2))
+      shouldBe (lm 4 1) (transformRight (lm 3 1) (li 3))
+      shouldBe (lm 3 1) (transformRight (lm 3 1) (li 4))
 
-  --     # test diamond property
-  --     rightOps = [ {"p":[],"od":null,"oi":{}} ]
-  --     leftOps = [ {"p":[],"od":null,"oi":""} ]
-  --     rightHas = type.apply(null, rightOps)
-  --     leftHas = type.apply(null, leftOps)
-
-  --     [left_, right_] = transformX type, leftOps, rightOps
-  --     shouldBe leftHas, type.apply rightHas, left_
-  --     shouldBe leftHas, type.apply leftHas, right_
+      shouldBe (li 0) (transformLeft (li 0) (lm 2 1))
+      shouldBe (li 1) (transformLeft (li 1) (lm 2 1))
+      shouldBe (li 3) (transformLeft (li 2) (lm 2 1))
+      shouldBe (li 3) (transformLeft (li 3) (lm 2 1))
 
 
-  --   it "An attempt to re-delete a key becomes a no-op" $ do
-  --     shouldBe [], type.transform [{p:["k"], od:"x"}], [{p:["k"], od:"x"}], "left"
-  --     shouldBe [], type.transform [{p:["k"], od:"x"}], [{p:["k"], od:"x"}], "right"
+  describe "object" $ do
+    it "passes sanity checks" $ do
+      shouldBe [j|{x:"a", y:"b"}|] (apply [j|{x:"a"}|] [j|{p:["y"], oi:"b"}|])
+      shouldBe [j|{}|] (apply [j|{x:"a"}|] [j|{p:["x"], od:"a"}|])
+      shouldBe [j|{x:"b"}|] (apply [j|{x:"a"}|] [j|{p:["x"], od:"a", oi:"b"}|])
+
+    it "Ops on deleted elements become noops" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:[1, 0], si:"hi"}|] [j|{p:[1], od:"x"}|])
+      shouldBe [j|{}|] (transformLeft [j|{p:[1], t:"text0", o:{p:0, i:"hi"}}|] [j|{p:[1], od:"x"}|])
+      shouldBe [j|{}|] (transformRight [j|{p:[9],si:"bite "}|] [j|{p:[],od:"agimble s",oi:null}|])
+      shouldBe [j|{}|] (transformRight [j|{p:[], t:"text0", o:{p:9, i:"bite "}}|] [j|{p:[],od:"agimble s",oi:null}|])
+
+    it "Ops on replaced elements become noops" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:[1, 0], si:"hi"}|] [j|{p:[1], od:"x", oi:"y"}|])
+      shouldBe [j|{}|] (transformLeft [j|{p:[1], t:"text0", o:{p:0, i:"hi"}}|] [j|{p:[1], od:"x", oi:"y"}|])
+
+    it "Deleted data is changed to reflect edits" $ do
+      shouldBe [j|{p:[1], od:"abc"}|] (transformLeft [j|{p:[1], od:"a"}|] [j|{p:[1, 1], si:"bc"}|])
+      shouldBe [j|{p:[1], od:"abc"}|] (transformLeft [j|{p:[1], od:"a"}|] [j|{p:[1], t:"text0", o:{p:1, i:"bc"}}|])
+      shouldBe [j|{p:[],od:25,oi:[]}|] (transformLeft [j|{p:[],od:22,oi:[]}|] [j|{p:[],na:3}|])
+      shouldBe [j|{p:[],od:{toves:""},oi:4}|] (transformLeft [j|{p:[],od:{toves:0},oi:4}|] [j|{p:["toves"],od:0,oi:""}|])
+      shouldBe [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[7],sd:"d "}|])
+      shouldBe [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[], t:"text0", o:{p:7, d:"d "}}|])
+      shouldBe [j|{}|] (transformRight [j|{p:["bird"],na:2}|] [j|{p:[],od:{bird:38},oi:20}|])
+      shouldBe [j|{p:[],od:{bird:40},oi:20}|] (transformLeft [j|{p:[],od:{bird:38},oi:20}|] [j|{p:["bird"],na:2}|])
+      shouldBe [j|{p:["He"],od:[]}|] (transformRight [j|{p:["He"],od:[]}|] [j|{p:["The"],na:-3}|])
+      shouldBe [j|{}|] (transformLeft [j|{p:["He"],oi:{}}|] [j|{p:[],od:{},oi:"the"}|])
+
+    it "If two inserts are simultaneous, the lefts insert will win" $ do
+      shouldBe [j|{p:[1], oi:"a", od:"b"}|] (transformLeft [j|{p:[1], oi:"a"}|] [j|{p:[1], oi:"b"}|])
+      shouldBe [j|{}|] (transformRight [j|{p:[1], oi:"b"}|] [j|{p:[1], oi:"a"}|])
+
+    it "parallel ops on different keys miss each other" $ do
+      shouldBe [j|{p:["a"], oi: "x"}|] (transformLeft [j|{p:["a"], oi:"x"}|] [j|{p:["b"], oi:"z"}|])
+      shouldBe [j|{p:["a"], oi: "x"}|] (transformLeft [j|{p:["a"], oi:"x"}|] [j|{p:["b"], od:"z"}|])
+      shouldBe [j|{p:["in","he"],oi:{}}|] (transformRight [j|{p:["in","he"],oi:{}}|] [j|{p:["and"],od:{}}|])
+      shouldBe [j|{p:["x",0],si:"his "}|] (transformRight [j|{p:["x",0],si:"his "}|] [j|{p:["y"],od:0,oi:1}|])
+      shouldBe [j|{p:["x"], t:"text0", o:{p:0, i:"his "}}|] (transformRight [j|{p:["x"],t:"text0", o:{p:0, i:"his "}}|] [j|{p:["y"],od:0,oi:1}|])
+
+    it "replacement vs. deletion" $ do
+      shouldBe [j|{p:[],oi:{}}|] (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""]}|])
+
+    -- it "replacement vs. replacement" $ do
+    --   shouldBe [],                    (transformRight [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
+    --   shouldBe [j|{p:[],od:null,oi:{}}|] (transformLeft [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
+    --   shouldBe [],                    (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])
+    --   shouldBe [j|{p:[],od:null,oi:{}}|] (transformLeft [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])
+
+    --   -- test diamond property
+    --   rightOps = [{"p":[],"od":null,"oi":{}}]
+    --   leftOps = [{"p":[],"od":null,"oi":""}]
+    --   rightHas = apply(null, rightOps)
+    --   leftHas = apply(null, leftOps)
+
+    --   let [left_, right_] = transformX type, leftOps, rightOps
+    --   shouldBe leftHas, apply rightHas, left_
+    --   shouldBe leftHas, apply leftHas, right_
+
+
+    it "An attempt to re-delete a key becomes a no-op" $ do
+      shouldBe [j|{}|] (transformLeft [j|{p:["k"], od:"x"}|] [j|{p:["k"], od:"x"}|])
+      shouldBe [j|{}|] (transformRight [j|{p:["k"], od:"x"}|] [j|{p:["k"], od:"x"}|])
 
 
 main :: IO ()

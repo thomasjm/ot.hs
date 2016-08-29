@@ -12,7 +12,6 @@ import Control.OperationalTransformation.JSON.Util
 import Data.List
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
-import Debug.Trace
 
 invertOperation = undefined
 
