@@ -3,17 +3,18 @@ module Control.OperationalTransformation.Server
   , ServerState (..)
   , initialServerState
   , applyOperation
+  , apply
   ) where
 
-import Control.OperationalTransformation
-import Control.Monad.Trans.Either
 import Control.Monad.Identity
+import Control.Monad.Trans.Either
+import Control.OperationalTransformation
 
 type Revision = Integer
 
 -- | The server keeps the current revision number and a list of previous
 -- operations to transform incoming operations against.
-data ServerState doc op = ServerState Revision doc [op]
+data ServerState doc op = ServerState Revision doc [op] deriving Show
 
 initialServerState :: doc -> ServerState doc op
 initialServerState doc = ServerState 0 doc []
