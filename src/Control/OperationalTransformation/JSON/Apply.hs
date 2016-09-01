@@ -67,13 +67,15 @@ apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
 
 apply (ObjectInsert path k value) input = case input ^? (objectAtPath path) of
   Nothing -> Left "Couldn't find object in ObjectInsert"
-  Just _ -> Right $ set ((pathToTraversal path) . (key k)) value input
+  Just _ -> Right $ set ((objectAtPath path) . (at k)) (Just value) input
 
-apply (ObjectDelete path k value) input = case input ^? (objectAtPath path) of
+-- TODO: assert value matches
+apply (ObjectDelete path k _value) input = case input ^? (objectAtPath path) of
   Nothing -> Left "Couldn't find object in ObjectInsert"
-  Just _ -> Right $ set ((pathToTraversal path)) value input
+  Just _ -> Right $ set ((objectAtPath path) . (at k)) Nothing input
 
-apply (ObjectReplace path k old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
+-- TODO: assert old matches
+apply (ObjectReplace path k _old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
 
 apply (ApplySubtypeOperation path typ op) input = case input ^? stringAtPath path of
   Nothing -> Left "Couldn't find text in ApplySubtypeOperation"
