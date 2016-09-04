@@ -52,6 +52,7 @@ affects (ListMove listPath listIndex1 listIndex2) op | path <- getPath op
                                                      , index <- getIndexInList listPath op = listIndex1 <= index && index <= listIndex2
 
 -- Objects are simpler
+affects (ObjectInsert path1 key1 val1) (ObjectInsert path2 key2 val2) | (path1 == path2) = key1 == key2
 affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
 affects (ObjectDelete path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
 affects (ObjectReplace path1 key old new) (getPath -> path2) = path1 `isPrefixOf` path2
@@ -119,7 +120,7 @@ transformRight op1@(StringInsert path i str) op2
       prop' = Prop $ pre `T.append` str `T.append` post
       path' = (init beginning) ++ [prop'] ++ rest
 
-transformRight x y = Left [i|Not handled: #{x} affecting #{y}|]
+transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 
 -- |In transformDouble, both operations affect the other
 transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
@@ -176,4 +177,6 @@ transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
   | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
 
 
-transformDouble x y = Left [i|Not handled: #{x} and #{y}|]
+transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) | sd1 == sd2 = Right (Identity, Identity)
+
+transformDouble x y = Left [i|transformDouble not handled: #{x} and #{y}|]

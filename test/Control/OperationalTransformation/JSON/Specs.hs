@@ -85,7 +85,6 @@ specs = do
      t [j|{p:["foo"], oi:1}|] [j|{}|]
      t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
      t [j|{p:["foo"], oi:1}|] [j|{p:["bar"], oi:2}|]
-     shouldBe True True
 
   describe "number" $ do
     it "Adds a number" $ do
@@ -96,17 +95,19 @@ specs = do
       shouldBe [j|{p:["a", "b"], na:3}|] (compose [j|{p:["a", "b"], na:1}|] [j|{p:["a", "b"], na:2}|])
       -- shouldBe [j|{p:["a"], na:1}, {p:["b"], na:2}], type.compose [{p:["a"], na:1}], [{p:["b"], na:2}]
 
-  --   it "doesn\"t overwrite values when it merges na in append" $ do
-  --     rightHas = 21
-  --     leftHas = 3
+    -- it "doesn\"t overwrite values when it merges na in append" $ do
+    --   let rightHas = A.Number 21
+    --   let leftHas = A.Number 3
 
-  --     rightOp = [{"p":[],"od":0,"oi":15},{"p":[],"na":4},{"p":[],"na":1},{"p":[],"na":1}]
-  --     leftOp = [{"p":[],"na":4},{"p":[],"na":-1}]
-  --     [right_, left_] = transformX type, rightOp, leftOp
+    --   let rightOp = [[j|{"p":[],"od":0,"oi":15}|], [j|{"p":[],"na":4}|], [j|{"p":[],"na":1}|], [j|{"p":[],"na":1}|]]
+    --   let leftOp = [[j|{"p":[],"na":4}|], [j|{"p":[],"na":-1}|]]
 
-  --     s_c = type.apply rightHas, left_
-  --     c_s = type.apply leftHas, right_
-  --     shouldBe s_c, c_s
+    --   let left = [map (transformLeft x) rightOp | x <- leftOp]
+    --   let right = fmap transformRight leftOp
+
+    --   let s_c = foldl (flip apply) rightHas left
+    --   let c_s = apply right leftHas
+    --   s_c `shouldBe` c_s
 
 
   -- # Strings should be handled internally by the text type. We"ll just do some basic sanity checks here.
