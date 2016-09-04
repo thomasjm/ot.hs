@@ -168,5 +168,12 @@ transformDouble op1@(ListDelete path1 i1 value1) op2@(ApplySubtypeOperation {})
     -- entire JSON structure
     op2' = setPath [] op2
 
+-- we know both operations affect each other, and our operations are both
+-- `ObjectDelete`s, so we know `path1 == path2`
+transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
+  | op1 == op2 = Right (Identity, Identity)
+  | key1 == key1 = Right (Identity, Identity) -- inconsistent state, so we behave forgivingly
+  | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
+
 
 transformDouble x y = Left [i|Not handled: #{x} and #{y}|]
