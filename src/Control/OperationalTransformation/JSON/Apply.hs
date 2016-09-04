@@ -23,13 +23,20 @@ objectAtPath path = (pathToTraversal path) . _Object
 stringAtPath path = (pathToTraversal path) . _String
 numberAtPath path = (pathToTraversal path) . _Number
 
-vectorInsert :: V.Vector A.Value -> Int -> A.Value -> V.Vector A.Value
+vectorInsert :: V.Vector a -> Int -> a -> V.Vector a
 vectorInsert vec index item = beginning <> [item] <> rest where
   (beginning, rest) = V.splitAt index vec
 
-vectorDelete :: V.Vector A.Value -> Int -> A.Value -> V.Vector A.Value
+vectorDelete :: V.Vector a -> Int -> a -> V.Vector a
 vectorDelete vec index item = beginning <> (V.drop 1 rest) where
   (beginning, rest) = V.splitAt index vec
+
+vectorMove :: V.Vector a -> Int -> Int -> V.Vector a
+vectorMove vec index1 index2 = V.fromList $ newBeginning ++ (item : newRest) where
+  list = V.toList vec
+  (beginning, (item:rest)) = splitAt index1 list
+  removed = beginning ++ rest
+  (newBeginning, newRest) = splitAt (if index1 < index2 then index2 else index2) removed
 
 -- TODO: handle invalid index
 stringInsert :: T.Text -> Int -> T.Text -> T.Text
@@ -63,7 +70,7 @@ apply (ListReplace path pos old new) input = case input ^? (listAtPath path) of
 -- TODO
 apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
   Nothing -> Left "Couldn't find list in ListMove"
-  Just _ -> error "ListMove apply not implemented"
+  Just l -> Right $ set (listAtPath path) (vectorMove l pos1 pos2) input
 
 apply (ObjectInsert path k value) input = case input ^? (objectAtPath path) of
   Nothing -> Left "Couldn't find object in ObjectInsert"

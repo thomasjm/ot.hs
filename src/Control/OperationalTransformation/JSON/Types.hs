@@ -46,7 +46,7 @@ parseAction (A.Object x) | "d" `elem` HM.keys x = do
 parseAction x = error [i|Failed to parse: #{x}|]
 
 toJSONTextOperation :: TextOperation -> A.Value
-toJSONTextOperation = undefined
+toJSONTextOperation = error "toJSONTextOperation undefined"
 
 -- * JSONOperation
 

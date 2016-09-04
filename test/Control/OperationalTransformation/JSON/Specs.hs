@@ -7,6 +7,7 @@ import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
+import Data.String.Interpolate.IsString
 import Test.Hspec
 import Test.Tasty
 import Test.Tasty.Hspec
@@ -25,8 +26,13 @@ compose val1 val2 = case C.compose op1 op2 of
 transform :: A.Value -> A.Value -> (A.Value, A.Value)
 transform val1 val2 = (toJSON op1', toJSON op2')
   where
-    Success (op1 :: JSONOperation) = fromJSON val1
-    Success (op2 :: JSONOperation) = fromJSON val2
+    op1 :: JSONOperation = case fromJSON val1 of
+      Success op1 -> op1
+      Error err -> error [i|Failed to decode val1: #{val1} (#{err})|]
+    op2 :: JSONOperation = case fromJSON val2 of
+      Success op2 -> op2
+      Error err -> error [i|Failed to decode val2: #{val2} (#{err})|]
+
     (op1', op2') = case C.transform op1 op2 of
       Left err -> error err
       Right x -> x
@@ -144,17 +150,10 @@ specs = do
         shouldBe [j|{p:[], t:"text0", o:[{p:0, d:"a"}, {p:1, d:"b"}]}|] (transformLeft a b)
 
       it "cancels out other deletes" $ do
-        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:{p:5, d:"a"}}|] [j|{p:["k"], t:"text0", o:[{p:5, d:"a"}]}|])
+        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:[{p:5, d:"a"}]}|] [j|{p:["k"], t:"text0", o:[{p:5, d:"a"}]}|])
 
       it "does not throw errors with blank inserts" $ do
-        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:{p:5, i:""}}|] [j|{p:["k"], t:"text0", o:[{p:3, i:"a"}]}|])
-
-  describe "subtype with non-array operation" $ do
-    describe "#transform()" $ do
-      it "works" $ do
-        let a = [j|{p:[], t:"mock", o:"foo"}|]
-        let b = [j|{p:[], t:"mock", o:"bar"}|]
-        shouldBe [j|{p:[], t:"mock", o:{mock:true}}|] (transformLeft a b)
+        shouldBe [j|{}|] (transformLeft [j|{p:["k"], t:"text0", o:[{p:5, i:""}]}|] [j|{p:["k"], t:"text0", o:[{p:3, i:"a"}]}|])
 
   describe "list" $ do
     describe "apply" $ do

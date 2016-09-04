@@ -13,7 +13,7 @@ import Data.List
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
-invertOperation = undefined
+invertOperation = error "invertOperation not implemented"
 
 -- | Helper function to deal with list operations.
 -- Called when we know that (listPath `isPrefixOf` (getPath op)), so op operates on either
