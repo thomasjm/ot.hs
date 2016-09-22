@@ -10,7 +10,6 @@ import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Data.List
-import Data.Maybe
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
@@ -39,9 +38,6 @@ getIndexInList x y = error [i|Failed to getIndexInList: #{show x}, #{show y}|]
 -- If x `affects` y and y `affects` x, then they must be touching the same thing -- for example, two
 -- list inserts in the same location, in which case we should break ties arbitrarily
 affects :: JSONOperation -> JSONOperation -> Bool
-affects (ListInsert listPath listIndex value) op | path <- getPath op
-                                                 , listPath `isPrefixOf` path
-                                                 , index <- getIndexInList listPath op = index >= listIndex
 affects (ListDelete listPath listIndex value) op | path <- getPath op
                                                  , listPath `isPrefixOf` path
                                                  , index <- getIndexInList listPath op = index >= listIndex
@@ -85,7 +81,13 @@ affects op1@(StringInsert {}) (ListDelete path2 _ _)
   = (not . null $ getPath op1) && (init (getPath op1) == path2)
 affects op1@(StringDelete {}) (ListDelete path2 _ _)
   = (not . null $ getPath op1) && (init (getPath op1) == path2)
-affects op1@(ListInsert {}) (ListDelete path2 _ _) = getPath op1 == path2
+
+affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | (path1 ++ [Pos index1]) == (path2 ++ [Pos index2]) = False
+affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | path1 == path2 = index1 <= index2
+affects (ListInsert listPath listIndex value) op | path <- getPath op
+                                                 , listPath `isPrefixOf` path
+                                                 , index <- getIndexInList listPath op = index >= listIndex
+
 affects op1@(ListDelete {}) (ListDelete path2 _ _) = getPath op1 == path2
 affects op1@(ApplySubtypeOperation {}) (ListDelete path2 _ _)
   = (not . null $ getPath op1) && (init (getPath op1) == path2)
@@ -104,8 +106,8 @@ affects (ApplySubtypeOperation path1 _ _) (getPath -> path2) = path1 `isPrefixOf
 
 affects _ _ = False
 
-op1 = parseOp [j|{p:["x"],t:"text0", o:[{p:0, i:"his "}]}|]
-op2 = parseOp [j|{p:["y"],od:0,oi:1}|]
+op1 = parseOp [j|{p:[0], li:"x"}|]
+op2 = parseOp [j|{p:[0], ld:"y"}|]
 
 -- | In transformRight, the left operation affects the right operation.
 -- So, transform the right operation properly and return it
@@ -117,6 +119,8 @@ transformRight op1@(ListInsert listPath _ val) op2
       path' = (init beginning) ++ [inc listPos] ++ rest
 
 -- TODO: be able to distinguish <= from ==
+-- TODO: unify these two ListDelete rules. The second one uses "last" unsafely
+transformRight op1@(ListDelete path1 index1 val1) op2@(ListInsert path2 index2 val2) | (path1 ++ [Pos index1]) == (path2 ++ [Pos index2]) = Right op2
 transformRight op1@(ListDelete listPath i val) op2
   | True = if x == i
       then Right Identity -- LD deletes index op2 is trying to do something to; deletion

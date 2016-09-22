@@ -44,6 +44,8 @@ instance HasPath JSONOperation where
   getPath (ListReplace path _ _ _) = path
   getPath (ListMove path _ _) = path
 
+  getPath (Add path _) = path
+
   getPath (ApplySubtypeOperation path _ _) = path
   getPath x = error $ "getPath undefined for: " ++ show x
 
