@@ -6,11 +6,13 @@ module Control.OperationalTransformation.JSON.Types
   , PathSegment(..)
 ) where
 
+import Control.Monad
 import Control.OperationalTransformation.Text (TextOperation(..), Action(..))
 import Data.Aeson
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.HashMap.Strict as HM
+import Data.Maybe
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -77,9 +79,11 @@ data JSONOperation
   -- inserts the object obj into the object at [path] with key key
   | ObjectInsert Path T.Text A.Value
   -- deletes the object obj with key key from the object at [path]
-  | ObjectDelete Path T.Text A.Value
+  -- The key may be Nothing, which is a special case meaning we should delete the entire object
+  | ObjectDelete Path (Maybe T.Text) A.Value
   -- replaces the object before with the object after at key key in the object at [path]
-  | ObjectReplace Path T.Text A.Value A.Value
+  -- The key may be Nothing, which is a special case meaning we should replace the entire object
+  | ObjectReplace Path (Maybe T.Text) A.Value A.Value
 
   -- * Subtypes
 
@@ -100,8 +104,13 @@ instance ToJSON JSONOperation where
   toJSON (ListReplace path i old new) = object [("p", toJSON (path ++ [Pos i])), ("ld", old), ("li", new)]
   toJSON (ListMove path src dst) = object [("p", toJSON (path ++ [Pos src])), ("lm", toJSON (Pos dst))]
   toJSON (ObjectInsert path key value)    = object [("p", toJSON (path ++ [Prop key])), ("oi", value)]
-  toJSON (ObjectDelete path key value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
-  toJSON (ObjectReplace path key old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
+
+  toJSON (ObjectDelete path (Just key) value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
+  toJSON (ObjectDelete path Nothing value)    = object [("p", toJSON path), ("od", value)]
+
+  toJSON (ObjectReplace path (Just key) old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
+  toJSON (ObjectReplace path Nothing old new) = object [("p", toJSON path), ("od", old), ("oi", new)]
+
   toJSON (ApplySubtypeOperation path t op) = object [("p", toJSON path), ("t", A.String t), ("o", toJSONTextOperation op)]
   toJSON (StringInsert path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
   toJSON (StringDelete path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
@@ -139,8 +148,9 @@ instance FromJSON JSONOperation where
                              return $ ObjectReplace path prop before after
   parseJSON (A.Object v) | "oi" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
+                             when (isNothing prop) $ fail "Missing key on object insert"
                              obj <- v .: "oi"
-                             return $ ObjectInsert path prop obj
+                             return $ ObjectInsert path (fromJust prop) obj
   parseJSON (A.Object v) | "od" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              obj <- v .: "od"
@@ -171,13 +181,19 @@ instance FromJSON JSONOperation where
 parsePathAndIndex :: A.Object -> A.Parser ([PathSegment], Int)
 parsePathAndIndex v = do
   pathAndIndex :: [PathSegment]  <- v .: "p"
-  let path = init pathAndIndex
-  let (Pos index) = last pathAndIndex
-  return (path, index)
+  if null pathAndIndex then do
+      fail "Can't parse empty list index"
+    else do
+      let path = init pathAndIndex
+      let (Pos index) = last pathAndIndex
+      return (path, index)
 
-parsePathAndProp :: A.Object -> A.Parser ([PathSegment], T.Text)
+parsePathAndProp :: A.Object -> A.Parser ([PathSegment], Maybe T.Text)
 parsePathAndProp v = do
   pathAndProp :: [PathSegment]  <- v .: "p"
-  let path = init pathAndProp
-  let (Prop prop) = last pathAndProp
-  return (path, prop)
+  if null pathAndProp then
+    return ([], Nothing)
+    else do
+      let path = init pathAndProp
+      let (Prop prop) = last pathAndProp
+      return (path, Just prop)

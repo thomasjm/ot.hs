@@ -77,12 +77,16 @@ apply (ObjectInsert path k value) input = case input ^? (objectAtPath path) of
   Just _ -> Right $ set ((objectAtPath path) . (at k)) (Just value) input
 
 -- TODO: assert value matches
-apply (ObjectDelete path k _value) input = case input ^? (objectAtPath path) of
+apply (ObjectDelete path (Just k) _value) input = case input ^? (objectAtPath path) of
   Nothing -> Left "Couldn't find object in ObjectInsert"
   Just _ -> Right $ set ((objectAtPath path) . (at k)) Nothing input
+-- TODO: assert value matches
+apply (ObjectDelete _ Nothing _value) _ = Right A.Null
 
 -- TODO: assert old matches
-apply (ObjectReplace path k _old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
+apply (ObjectReplace path (Just k) _old new) input = Right $ set ((pathToTraversal path) . (key k)) new input
+-- TODO: assert old matches
+apply (ObjectReplace path Nothing _old new) input = Right new
 
 apply (ApplySubtypeOperation path typ op) input = case input ^? stringAtPath path of
   Nothing -> Left "Couldn't find text in ApplySubtypeOperation"

@@ -34,10 +34,17 @@ class HasPath a where
 instance HasPath JSONOperation where
   getPath (StringInsert path _ _) = path
   getPath (StringDelete path _ _) = path
+
+  getPath (ObjectInsert path _ _) = path
+  getPath (ObjectDelete path _ _) = path
+  getPath (ObjectReplace path _ _ _ ) = path
+
   getPath (ListInsert path _ _) = path
   getPath (ListDelete path _ _) = path
+
   getPath (ApplySubtypeOperation path _ _) = path
-  getPath _ = error "getPath undefined"
+  getPath x = error $ "getPath undefined for: " ++ show x
+
   setPath path' (StringInsert _ x y) = (StringInsert path' x y)
   setPath path' (StringDelete _ x y) = (StringInsert path' x y)
   setPath path' (ListInsert _ x y) = (ListInsert path' x y)
