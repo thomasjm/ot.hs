@@ -76,7 +76,11 @@ data JSONOperation
   -- * Objects
 
   -- inserts the object obj into the object at [path] with key key
-  | ObjectInsert Path T.Text A.Value
+  -- The key may be Nothing, which is a special case essentially meaning we're doing an
+  -- ObjectReplace of `null`. But the JS spec says
+  -- (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""]}|]) `shouldBe` [j|{p:[],oi:{}}|]
+  -- , so we have to define this this way.
+  | ObjectInsert Path (Maybe T.Text) A.Value
   -- deletes the object obj with key key from the object at [path]
   -- The key may be Nothing, which is a special case meaning we should delete the entire object
   | ObjectDelete Path (Maybe T.Text) A.Value
@@ -102,8 +106,8 @@ instance ToJSON JSONOperation where
   toJSON (ListDelete path i value)    = object [("p", toJSON (path ++ [Pos i])), ("ld", value)]
   toJSON (ListReplace path i old new) = object [("p", toJSON (path ++ [Pos i])), ("ld", old), ("li", new)]
   toJSON (ListMove path src dst) = object [("p", toJSON (path ++ [Pos src])), ("lm", toJSON (Pos dst))]
-  toJSON (ObjectInsert path key value)    = object [("p", toJSON (path ++ [Prop key])), ("oi", value)]
-
+  toJSON (ObjectInsert path (Just key) value)    = object [("p", toJSON (path ++ [Prop key])), ("oi", value)]
+  toJSON (ObjectInsert path Nothing value)    = object [("p", toJSON path), ("oi", value)]
   toJSON (ObjectDelete path (Just key) value)    = object [("p", toJSON (path ++ [Prop key])), ("od", value)]
   toJSON (ObjectDelete path Nothing value)    = object [("p", toJSON path), ("od", value)]
 
@@ -149,7 +153,7 @@ instance FromJSON JSONOperation where
                              (path, prop) <- parsePathAndProp v
                              when (isNothing prop) $ fail "Missing key on object insert"
                              obj <- v .: "oi"
-                             return $ ObjectInsert path (fromJust prop) obj
+                             return $ ObjectInsert path prop obj
   parseJSON (A.Object v) | "od" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
                              obj <- v .: "od"
