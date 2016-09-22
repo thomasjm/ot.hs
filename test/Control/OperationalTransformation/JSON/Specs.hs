@@ -79,10 +79,6 @@ specs = do
     --  it "merges od+oi, od+oi -> od+oi" $ do
     --    shouldBe [j|{p:["foo"], od:1, oi:2}|] (compose [j|{p:["foo"],od:1,oi:3}|] [j|{p:["foo"],od:3,oi:2}|])
 
-
--- * Everything below this point isn't 100% converted from Coffeescript to Haskell yet
--- Uncommand and finish converting as needed
-
   describe "#transform() stuff" $ do
    it "returns sane values" $ do
      let t = \op1 op2 -> op1 `shouldBe` transformLeft op1 op2
@@ -139,9 +135,7 @@ specs = do
       it "works" $ do
         shouldBe [j|"abc"|] (apply [j|"a"|] [j|{p:[], t:"text0", o:[{p:1, i:"bc"}]}|])
         shouldBe [j|{x:"abc"}|] (apply [j|{x:"a"}|] [j|{p:["x"], t:"text0", o:[{p:1, i:"bc"}]}|])
-        -- TODO: this test is presenting a problem because text operations in the ot.hs library
-        -- must be padded with retain operations that go to the end of the string...
-        -- shouldBe [j|"bc"|] (apply [j|"abc"|] [j|{p:[], t:"text0", o:[{p:0, d:"a"}]}|])
+        shouldBe [j|"bc"|] (apply [j|"abc"|] [j|{p:[], t:"text0", o:[{p:0, d:"a"}]}|])
 
     describe "#transform()" $ do
       it "splits deletes" $ do
