@@ -10,6 +10,7 @@ import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Data.List
+import Data.Maybe
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 
@@ -54,13 +55,13 @@ affects (ListMove listPath listIndex1 listIndex2) op | path <- getPath op
 -- Objects are simpler
 -- Parallel object operations don't affect each other
 affects (ObjectInsert path1 key1 val1) (ObjectInsert path2 key2 val2) = path1 == path2 && key1 == key2
-affects (ObjectInsert path1 key1 val1) (ObjectDelete path2 (Just key2) val2) = path1 == path2 && key1 == key2
-affects (ObjectInsert path1 key1 val1) (ObjectReplace path2 (Just key2) old2 new2) = path1 == path2 && key1 == key2
+affects (ObjectInsert path1 key1 val1) (ObjectDelete path2 key2 val2) = path1 == path2 && key1 == key2
+affects (ObjectInsert path1 key1 val1) (ObjectReplace path2 key2 old2 new2) = path1 == path2 && key1 == key2
 -- Other operations are only affected if the path is a prefix
 affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
 
 -- Parallel object operations don't affect each other
-affects (ObjectDelete path1 (Just key1) val1) (ObjectInsert path2 key2 val2) = path1 == path2 && key1 == key2
+affects (ObjectDelete path1 key1 val1) (ObjectInsert path2 key2 val2) = path1 == path2 && key1 == key2
 affects (ObjectDelete path1 key1 val1) (ObjectDelete path2 key2 val2) = path1 == path2 && key1 == key2
 affects (ObjectDelete path1 key1 val1) (ObjectReplace path2 key2 old2 new2) = path1 == path2 && key1 == key2
 -- Other operations are only affected if the path is a prefix
@@ -68,7 +69,7 @@ affects (ObjectDelete path1 (Just key) val) (getPath -> path2) = (path1 ++ [Prop
 affects (ObjectDelete path1 Nothing val) (getPath -> path2) = path1 `isPrefixOf` path2
 
 -- Parallel object operations don't affect each other
-affects (ObjectReplace path1 (Just key1) old1 new1) (ObjectInsert path2 key2 val2) | path1 == path2 = key1 == key2
+affects (ObjectReplace path1 key1 old1 new1) (ObjectInsert path2 key2 val2) | path1 == path2 = key1 == key2
 affects (ObjectReplace path1 key1 old1 new1) (ObjectDelete path2 key2 val2) | path1 == path2 = key1 == key2
 affects (ObjectReplace path1 key1 old1 new1) (ObjectReplace path2 key2 old2 new2) | path1 == path2 = key1 == key2
 -- Other operations are only affected if the path is a prefix
@@ -201,8 +202,12 @@ transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
 
 
 -- On simultaneous inserts, the left insert wins
-transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) | path1 == path2 && key1 == key2 = Right (ObjectReplace path1 (Just key1) value2 value1, Identity)
+transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) | path1 == path2 && key1 == key2 = Right (ObjectReplace path1 key1 value2 value1, Identity)
 
 transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) | sd1 == sd2 = Right (Identity, Identity)
+
+transformDouble op1@(ObjectReplace {}) op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
+transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)| value1 == old2 = Right (Identity, ObjectInsert path1 key1 new2)
+  | otherwise = error "unhandled so far :/"
 
 transformDouble x y = Left [i|transformDouble not handled: #{x} and #{y}|]
