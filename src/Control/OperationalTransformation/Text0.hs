@@ -17,7 +17,6 @@ import Data.Convertible
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
 import qualified Data.Text as T
-import qualified Data.Vector as V
 
 data SingleText0Operation = TextInsert Int T.Text
                           | TextDelete Int T.Text
@@ -30,22 +29,18 @@ type Text0Operation = [SingleText0Operation]
 invertOperation = undefined
 
 
-instance OTOperation Text0Operation where
-  -- Handle identities up front
-  transform [] op = Right ([], op)
-  transform op [] = Right (op, [])
+instance OTOperation SingleText0Operation where
+  transform op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 > p2 = rev <$> transform' op2 op1
+  transform op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) = transform' op1 op2
 
-  transform [op1@(TextInsert p1 s1)] [op2@(TextInsert p2 s2)] | p1 > p2 = (wrapList . rev) <$> transform' op2 op1
-  transform [op1@(TextInsert p1 s1)] [op2@(TextInsert p2 s2)] = wrapList <$> transform' op1 op2
+  transform op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p1 > p2 = rev <$> transform' op2 op1
+  transform op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) = transform' op1 op2
 
-  transform [op1@(TextDelete p1 s1)] [op2@(TextInsert p2 s2)] | p1 > p2 = (wrapList . rev) <$> transform' op2 op1
-  transform [op1@(TextDelete p1 s1)] [op2@(TextInsert p2 s2)] = wrapList <$> transform' op1 op2
+  transform op1@(TextInsert p1 s1) op2@(TextDelete p2 s2) | p1 > p2 = rev <$> transform' op2 op1
+  transform op1@(TextInsert p1 s1) op2@(TextDelete p2 s2) = transform' op1 op2
 
-  transform [op1@(TextInsert p1 s1)] [op2@(TextDelete p2 s2)] | p1 > p2 = (wrapList . rev) <$> transform' op2 op1
-  transform [op1@(TextInsert p1 s1)] [op2@(TextDelete p2 s2)] = wrapList <$> transform' op1 op2
-
-  transform [op1@(TextDelete p1 s1)] [op2@(TextDelete p2 s2)] | p1 > p2 = (wrapList . rev) <$> transform' op2 op1
-  transform [op1@(TextDelete p1 s1)] [op2@(TextDelete p2 s2)] = wrapList <$> transform' op1 op2
+  transform op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 > p2 = rev <$> transform' op2 op1
+  transform op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = transform' op1 op2
 
 
 rev (a, b) = (b, a)

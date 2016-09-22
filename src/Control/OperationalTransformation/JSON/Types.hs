@@ -87,7 +87,7 @@ data JSONOperation
   -- * Subtypes
 
   -- applies the subtype op o of type t to the object at [path]
-  | ApplySubtypeOperation Path T.Text [Text0Operation]
+  | ApplySubtypeOperation Path T.Text Text0Operation
   -- inserts the string s at offset offset into the string at [path] (uses subtypes internally)
   | StringInsert Path Int T.Text
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
@@ -161,7 +161,7 @@ instance FromJSON JSONOperation where
                              typ <- v .: "t"
                              case typ of
                                "text0" -> do
-                                 ops :: [Text0Operation] <- v .: "o"
+                                 ops :: Text0Operation <- v .: "o"
                                  return $ ApplySubtypeOperation path typ ops
                                _ -> error "Unrecognized subtype operation"
 
