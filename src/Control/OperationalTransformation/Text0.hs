@@ -64,9 +64,6 @@ applySingle txt (TextInsert p t) = convert $ begin ++ (convert t) ++ end
 applySingle txt (TextDelete p t) = convert $ begin ++ (L.drop (L.length ((convert t) :: String)) end)
   where (begin, end) = L.splitAt p ((convert txt) :: String)
 
-instance OTComposableOperation Text0Operation where
-  compose op1 op2 = Right $ op1 ++ op2
-
 instance FromJSON SingleText0Operation where
   parseJSON (A.Object x) | "i" `elem` HM.keys x = do
     p <- x .: "p"
@@ -80,5 +77,5 @@ instance FromJSON SingleText0Operation where
   parseJSON _ = fail "Couldn't parse Text0Operation"
 
 instance ToJSON SingleText0Operation where
-  toJSON (TextInsert p s) = object [("p", A.Number $ fromIntegral p), ("s", A.String s)]
-  toJSON (TextDelete p d) = object [("p", A.Number $ fromIntegral p), ("s", A.String d)]
+  toJSON (TextInsert p s) = object [("p", A.Number $ fromIntegral p), ("i", A.String s)]
+  toJSON (TextDelete p d) = object [("p", A.Number $ fromIntegral p), ("d", A.String d)]
