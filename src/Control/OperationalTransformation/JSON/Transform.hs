@@ -9,6 +9,7 @@ import qualified Control.OperationalTransformation.JSON.Apply as Ap
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
+import Control.OperationalTransformation.Text0
 import Data.List
 import Data.String.Interpolate.IsString
 import qualified Data.Text as T
@@ -173,6 +174,9 @@ transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2
 -- For dueling subtype operations, defer to the operation's transform function
 transformDouble (ApplySubtypeOperation path1 typ1 op1) (ApplySubtypeOperation path2 typ2 op2) = case (C.transform op1 op2) of
   Left err -> Left err
+  Right (T0 [], T0 []) -> Right (Identity, Identity)
+  Right (T0 [], op2') -> Right (Identity, ApplySubtypeOperation path2 typ2 op2')
+  Right (op1', T0 []) -> Right (ApplySubtypeOperation path1 typ1 op1', Identity)
   Right (op1', op2') -> Right (ApplySubtypeOperation path1 typ1 op1', ApplySubtypeOperation path2 typ2 op2')
 
 transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2)

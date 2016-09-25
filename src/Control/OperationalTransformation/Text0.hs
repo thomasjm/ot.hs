@@ -13,10 +13,12 @@ module Control.OperationalTransformation.Text0
 
 
 import Control.OperationalTransformation
+import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
 import Data.Convertible
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
+import Data.Monoid
 import qualified Data.Text as T
 
 data SingleText0Operation = TextInsert Int T.Text
@@ -27,9 +29,17 @@ newtype Text0Operation = T0 [SingleText0Operation] deriving (Eq, Show)
 
 invertOperation = undefined
 
+isBlank (TextInsert _ s) = s == ""
+isBlank (TextDelete _ s) = s == ""
+
+
 instance OTOperation Text0Operation where
   transform (T0 []) x = Right (T0 [], x)
   transform x (T0 []) = Right (x, T0 [])
+
+  transform (T0 [op1]) (T0 [op2]) | isBlank op1 = Right (T0 [], T0 [op2])
+  transform (T0 [op1]) (T0 [op2]) | isBlank op2 = Right (T0 [op1], T0 [])
+  transform (T0 [op1]) (T0 [op2]) | isBlank op2 && isBlank op2 = Right (T0 [], T0 [])
 
   transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
   transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) = transform' op1 op2
@@ -48,16 +58,44 @@ rev (a, b) = (b, a)
 
 wrapList (a, b) = ([a], [b])
 
+len = T.length
 
 -- In transform', p1 <= p2 guaranteed
-transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 + (T.length s1) <= p2
+transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 == p2
+  = Right (T0 [op1], T0 [TextInsert (p2 + (len s1)) s2])
+-- Default behavior
+transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2)
   = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
--- transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 + (T.length s1) <= p2
-  -- = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
-transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p2 >= p1
-                                                         , p2 <= p1 + (T.length s1)
+
+-- Insert is entirely within delete: split the delete
+-- Note that the second delete is shifted back because it is applied after the first delete
+transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p2 < p1 + len s1
+  = Right (T0 [TextDelete p1 (T.take (p2 - p1) s1), TextDelete (p1 + (len s1) - (p2 - p1)) (T.drop (p2 - p1) s1)],
+           T0 [TextInsert p1 s2])
+-- Delete and insert at the same place: delete shifts forward
+transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p1 == p2
+  = Right (T0 [TextDelete (p1 + (len s2)) s1], T0 [op2])
+-- (Default) Delete that comes strictly before insert just causes insert to shift back
+transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2)
+  = Right (T0 [op1], T0 [TextInsert (p2 - (len s1)) s2])
+
+
+-- TODO: insert before delete probably needs more cases
+transform' op1@(TextInsert p1 s1) op2@(TextDelete p2 s2) | p1 == p2
+  = Right (T0 [op1], T0 [TextDelete (p2 + (len s1)) s2])
+transform' op1@(TextInsert p1 s1) op2@(TextDelete p2 s2)
+  = Right (T0 [op1], T0 [TextDelete (p2 + (len s1)) s2])
+
+-- Second delete exactly matches first delete
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 == p2, s1 == s2
   = Right (T0 [], T0 [])
-transform' op1@(TextInsert p1 s1) op2@(TextDelete p2 s2) = error "Not implemented"
+-- Second delete is entirely within the first delete
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p2 < p1 + len s1
+  = Right (T0 [TextDelete p1 ((T.take (p2 - p1) s1) <> (T.drop (p2 - p1 + (len s2)) s1))], T0 [])
+-- (Default) Second delete comes after
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 + (len s1) < p2
+  = Right (T0 [op1], T0 [TextDelete (p2 - (len s1)) s2])
+
 transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = error "Not implemented"
 
 
@@ -89,3 +127,13 @@ instance ToJSON SingleText0Operation where
 
 instance OTComposableOperation Text0Operation where
   compose (T0 ops1) (T0 ops2) = Right $ T0 (ops1 ++ ops2)
+
+
+-- |Force parse an operation. Just for REPL testing.
+parseOp :: A.Value -> Text0Operation
+parseOp x = case fromJSON x of
+  Success op -> T0 [op]
+  Error err -> error err
+
+op1 = parseOp [j|{p:5, d:"a"}|]
+op2 = parseOp [j|{p:5, d:"a"}|]
