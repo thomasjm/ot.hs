@@ -114,7 +114,7 @@ instance ToJSON JSONOperation where
   toJSON (ObjectReplace path (Just key) old new) = object [("p", toJSON (path ++ [Prop key])), ("od", old), ("oi", new)]
   toJSON (ObjectReplace path Nothing old new) = object [("p", toJSON path), ("od", old), ("oi", new)]
 
-  toJSON (ApplySubtypeOperation path t ops) = object [("p", toJSON path), ("t", A.String t), ("o", A.Array $ V.fromList (fmap toJSON ops))]
+  toJSON (ApplySubtypeOperation path t (T0 ops)) = object [("p", toJSON path), ("t", A.String t), ("o", A.Array $ V.fromList (fmap toJSON ops))]
   toJSON (StringInsert path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
   toJSON (StringDelete path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
 
@@ -165,8 +165,8 @@ instance FromJSON JSONOperation where
                              typ <- v .: "t"
                              case typ of
                                "text0" -> do
-                                 ops :: Text0Operation <- v .: "o"
-                                 return $ ApplySubtypeOperation path typ ops
+                                 ops :: [SingleText0Operation] <- v .: "o"
+                                 return $ ApplySubtypeOperation path typ (T0 ops)
                                _ -> error "Unrecognized subtype operation"
 
   parseJSON (A.Object v) | "si" `elem` (HM.keys v) = do

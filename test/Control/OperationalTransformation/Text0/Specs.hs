@@ -17,12 +17,12 @@ import Test.Tasty.Hspec
 -- https://github.com/ottypes/json0/blob/master/test/json0.coffee
 
 compose :: A.Value -> A.Value -> A.Value
-compose val1 val2 = case C.compose op1 op2 of
+compose val1 val2 = case C.compose (T0 op1) (T0 op2) of
   Left err -> error err
-  Right x -> toJSON x
+  Right (T0 x) -> toJSON x
   where
-    Success (op1 :: Text0Operation) = fromJSON val1
-    Success (op2 :: Text0Operation) = fromJSON val2
+    Success (op1 :: [SingleText0Operation]) = fromJSON val1
+    Success (op2 :: [SingleText0Operation]) = fromJSON val2
 
 normalize = undefined
 
@@ -33,14 +33,14 @@ transformCursorRight = undefined
 transform :: A.Value -> A.Value -> (A.Value, A.Value)
 transform val1 val2 = (toJSON op1', toJSON op2')
   where
-    op1 :: Text0Operation = case fromJSON val1 of
+    op1 :: [SingleText0Operation] = case fromJSON val1 of
       Success op1 -> op1
       Error err -> error [i|Failed to decode val1: #{val1} (#{err})|]
-    op2 :: Text0Operation = case fromJSON val2 of
+    op2 :: [SingleText0Operation] = case fromJSON val2 of
       Success op2 -> op2
       Error err -> error [i|Failed to decode val2: #{val2} (#{err})|]
 
-    (op1', op2') = case C.transform op1 op2 of
+    (T0 op1', T0 op2') = case C.transform (T0 op1) (T0 op2) of
       Left err -> error err
       Right x -> x
 
@@ -48,12 +48,12 @@ transform val1 val2 = (toJSON op1', toJSON op2')
 d :: A.Value -> Text0Operation
 d jsonValue = op
   where
-    Success op = fromJSON jsonValue
+    Success op = T0 <$> fromJSON jsonValue
 
 apply :: T.Text -> A.Value -> T.Text
 apply input opval = case fromJSON opval of
   Error err -> error err
-  Success (op :: Text0Operation) -> case C.apply op input of
+  Success (op :: SingleText0Operation) -> case C.apply (T0 [op]) input of
     Left err -> error err
     Right x -> x
 
@@ -62,9 +62,9 @@ apply input opval = case fromJSON opval of
 transform' :: A.Value -> A.Value -> (Text0Operation, Text0Operation)
 transform' val1 val2 = (op1', op2')
   where
-    Success (op1 :: Text0Operation) = fromJSON val1
-    Success (op2 :: Text0Operation) = fromJSON val2
-    Right (op1', op2') = C.transform op1 op2
+    Success (op1 :: [SingleText0Operation]) = fromJSON val1
+    Success (op2 :: [SingleText0Operation]) = fromJSON val2
+    Right (op1', op2') = C.transform (T0 op1) (T0 op2)
 
 -- TODO: these might be backwards, not sure yet
 transformLeft :: A.Value -> A.Value -> A.Value
