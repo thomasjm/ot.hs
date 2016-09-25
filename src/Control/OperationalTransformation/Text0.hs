@@ -8,7 +8,7 @@ module Control.OperationalTransformation.Text0
   (
   -- * JSON operations
   Text0Operation (..),
-  SingleText0Operation
+  SingleText0Operation(..)
   ) where
 
 
@@ -50,10 +50,13 @@ wrapList (a, b) = ([a], [b])
 
 
 -- In transform', p1 <= p2 guaranteed
-transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 + (T.length s1) <= p2 = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
+transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 + (T.length s1) <= p2
+  = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
+-- transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 + (T.length s1) <= p2
+  -- = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
 transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p2 >= p1
                                                          , p2 <= p1 + (T.length s1)
-                                                         = Right (T0 [], T0 [])
+  = Right (T0 [], T0 [])
 transform' op1@(TextInsert p1 s1) op2@(TextDelete p2 s2) = error "Not implemented"
 transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = error "Not implemented"
 

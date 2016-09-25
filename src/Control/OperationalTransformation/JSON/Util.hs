@@ -1,8 +1,10 @@
+{-# LANGUAGE ScopedTypeVariables, OverloadedStrings, PatternGuards, QuasiQuotes #-}
 
 module Control.OperationalTransformation.JSON.Util where
 
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
+import Data.String.Interpolate.IsString
 
 inc :: PathSegment -> PathSegment
 inc = add 1
@@ -51,7 +53,42 @@ instance HasPath JSONOperation where
 
   setPath path' (StringInsert _ x y) = (StringInsert path' x y)
   setPath path' (StringDelete _ x y) = (StringInsert path' x y)
+
   setPath path' (ListInsert _ x y) = (ListInsert path' x y)
   setPath path' (ListDelete _ x y) = (ListDelete path' x y)
+  setPath path' (ListReplace _ x y z) = (ListReplace path' x y z)
+  setPath path' (ListMove _ x y) = (ListMove path' x y)
+
   setPath path' (ApplySubtypeOperation _ x y) = ApplySubtypeOperation path' x y
-  setPath _ _ = error "setPath undefined"
+  setPath _ x = error [i|setPath undefined for #{x}|]
+
+
+-- |A "full path" is different from a "path" because it contains the list
+-- index or object key, if present. This is sometimes more useful.
+class HasFullPath a where
+  getFullPath :: a -> Path
+
+instance HasFullPath JSONOperation where
+  getFullPath (StringInsert path _ _) = path
+  getFullPath (StringDelete path _ _) = path
+
+  getFullPath (ObjectInsert path (Just key) _) = path ++ [Prop key]
+  getFullPath (ObjectDelete path (Just key) _) = path ++ [Prop key]
+  getFullPath (ObjectReplace path (Just key) _ _ ) = path ++ [Prop key]
+  getFullPath (ObjectInsert path Nothing _) = path
+  getFullPath (ObjectDelete path Nothing _) = path
+  getFullPath (ObjectReplace path Nothing _ _ ) = path
+
+  getFullPath (ListInsert path i _) = path ++ [Pos i]
+  getFullPath (ListDelete path i _) = path ++ [Pos i]
+  getFullPath (ListReplace path i _ _) = path ++ [Pos i]
+  getFullPath (ListMove path i _) = path ++ [Pos i]
+
+  getFullPath (Add path _) = path
+
+  getFullPath (ApplySubtypeOperation path _ _) = path
+  getFullPath x = error $ "getFullPath undefined for: " ++ show x
+
+
+isListInsert (ListInsert {}) = True
+isListInsert _ = False

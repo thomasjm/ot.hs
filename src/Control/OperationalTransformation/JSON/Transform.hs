@@ -19,7 +19,7 @@ invertOperation = error "invertOperation not implemented"
 -- Called when we know that (listPath `isPrefixOf` (getPath op)), so op operates on either
 -- a) an element in the list pointed to by listPath, or
 -- b) a child of such an element
--- In either case, returns the index in the list pointed to be listPath
+-- In either case, returns the index in the list pointed to by listPath
 getIndexInList listPath op | (length listPath) < (length path) = unPos (path !! (length listPath))
   where path = getPath op
 getIndexInList listPath (ListInsert path pos value) | (length listPath) == (length path) = pos
@@ -38,15 +38,24 @@ getIndexInList x y = error [i|Failed to getIndexInList: #{show x}, #{show y}|]
 -- If x `affects` y and y `affects` x, then they must be touching the same thing -- for example, two
 -- list inserts in the same location, in which case we should break ties arbitrarily
 affects :: JSONOperation -> JSONOperation -> Bool
+
+
+-- If an operation operates on the same index as a list insert, it does *not* affect the list insert
+-- The exception to this is another list insert, in which case we must break ties
+affects op1@(getFullPath -> path1) (ListInsert path2 index2 _) | (not $ isListInsert op1)
+                                                               , (path2 ++ [Pos index2]) `isPrefixOf` path1 = False
+
 affects (ListDelete listPath listIndex value) op | path <- getPath op
                                                  , listPath `isPrefixOf` path
                                                  , index <- getIndexInList listPath op = index >= listIndex
+
 affects (ListReplace listPath listIndex old new) op | path <- getPath op
                                                     , listPath `isPrefixOf` path
-                                                    , index <- getIndexInList listPath op = index == listIndex
+                                                    = listIndex == getIndexInList listPath op
 affects (ListMove listPath listIndex1 listIndex2) op | path <- getPath op
                                                      , listPath `isPrefixOf` path
-                                                     , index <- getIndexInList listPath op = listIndex1 <= index && index <= listIndex2
+                                                     , index <- getIndexInList listPath op
+                                                     = listIndex1 <= index && index <= listIndex2
 
 -- Objects are simpler
 -- Parallel object operations don't affect each other
@@ -143,11 +152,13 @@ transformRight op1@(StringInsert path i str) op2
       prop' = Prop $ pre `T.append` str `T.append` post
       path' = (init beginning) ++ [prop'] ++ rest
 
--- A delete or replace turns the other operation into a no-op
+-- An object delete or replace turns the other operation into a no-op
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
 transformRight op1@(ObjectReplace {}) op2 = Right Identity
 
-
+-- A list replace on the same index turns the other thing into a no-op
+transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (path1 ++ [Pos index1]) `isPrefixOf` path2
+  = Right Identity
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 
 -- |In transformDouble, both operations affect the other

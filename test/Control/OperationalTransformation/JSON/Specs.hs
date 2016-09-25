@@ -189,8 +189,8 @@ specs = do
       shouldBe' [j|{p:["x",3], si: "hi"}|] (transformLeft [j|{p:["x",3], si:"hi"}|] [j|{p:["x",0,"x"], li:0}|])
 
       -- TODO: these seem to contain invalid string inserts -- the last element of the path is not a number
-      -- shouldBe' [j|{p:["x",3,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",5], li:0}|])
-      -- shouldBe' [j|{p:["x",4,"x"], si: "hi"}|] (transformLeft [j|{p:["x",3,"x"], si:"hi"}|] [j|{p:["x",0], li:0}|])
+      shouldBe' [j|{p:["x",3,2], si: "hi"}|] (transformLeft [j|{p:["x",3,2], si:"hi"}|] [j|{p:["x",5], li:0}|])
+      shouldBe' [j|{p:["x",4,2], si: "hi"}|] (transformLeft [j|{p:["x",3,2], si:"hi"}|] [j|{p:["x",0], li:0}|])
 
       shouldBe' [j|{p:[0], t:"text0", o:[{p:203, i:"hi"}]}|] (transformLeft [j|{p:[1], t:"text0", o:[{p:203, i:"hi"}]}|] [j|{p:[0], ld:"x"}|])
       shouldBe' [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] (transformLeft [j|{p:[0], t:"text0", o:[{p:204, i:"hi"}]}|] [j|{p:[1], ld:"x"}|])
@@ -228,15 +228,11 @@ specs = do
       it "composes insert then delete into a no-op" $ do
         shouldBe' [j|{}|] (compose [j|{p:[1], li:"abc"}|] [j|{p:[1], ld:"abc"}|])
         shouldBe' [j|{p:[1],ld:null,li:"x"}|] (transformRight [j|{p:[0],ld:null,li:"x"}|] [j|{p:[0],li:"The"}|])
-
-      it "doesn\"t change the original object" $ do
-        let a = [j|{p:[0],ld:"abc",li:null}|]
-        shouldBe' [j|{p:[0],ld:"abc"}|] (compose a [j|{p:[0],ld:null}|])
-        shouldBe' [j|{p:[0],ld:"abc",li:null}|] a
+        shouldBe' [j|{p:[0],ld:"abc"}|] (compose [j|{p:[0],ld:"abc",li:null}|] [j|{p:[0],ld:null}|])
 
       it "composes together adjacent string ops" $ do
         shouldBe' [j|{p:[100], si:"hi"}|] (compose [j|{p:[100], si:"h"}|] [j|{p:[101], si:"i"}|])
-        shouldBe' [j|{p:[], t:"text0", o:{p:100, i:"hi"}}|] (compose [j|{p:[], t:"text0", o:{p:100, i:"h"}}|] [j|{p:[], t:"text0", o:[{p:101, i:"i"}]}|])
+        shouldBe' [j|{p:[], t:"text0", o:[{p:100, i:"hi"}]}|] (compose [j|{p:[], t:"text0", o:[{p:100, i:"h"}]}|] [j|{p:[], t:"text0", o:[{p:101, i:"i"}]}|])
 
     it "moves ops on a moved element with the element" $ do
       shouldBe' [j|{p:[10], ld:"x"}|] (transformLeft [j|{p:[4], ld:"x"}|] [j|{p:[4], lm:10}|])
