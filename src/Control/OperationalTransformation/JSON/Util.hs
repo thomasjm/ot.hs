@@ -21,6 +21,9 @@ rev (a, b) = (b, a)
 unPos (Pos x) = x
 unPos _ = error "unPos called on prop"
 
+unProp (Prop x) = x
+unProp _ = error "unProp called on pos"
+
 -- |Force parse an operation. Just for REPL testing.
 parseOp :: A.Value -> JSONOperation
 parseOp x = case fromJSON x of
@@ -41,7 +44,7 @@ instance HasPath JSONOperation where
   getPath (ObjectDelete path _ _) = path
   getPath (ObjectReplace path _ _ _ ) = path
 
-  getPath (ListInsert path _ _) = path
+  getPath (ListInsert path i _) = path
   getPath (ListDelete path _ _) = path
   getPath (ListReplace path _ _ _) = path
   getPath (ListMove path _ _) = path
@@ -53,6 +56,10 @@ instance HasPath JSONOperation where
 
   setPath path' (StringInsert _ x y) = (StringInsert path' x y)
   setPath path' (StringDelete _ x y) = (StringInsert path' x y)
+
+  setPath path' (ObjectInsert _ x y) = (ObjectInsert path' x y)
+  setPath path' (ObjectDelete _ x y) = (ObjectDelete path' x y)
+  setPath path' (ObjectReplace _ x y z) = (ObjectReplace path' x y z)
 
   setPath path' (ListInsert _ x y) = (ListInsert path' x y)
   setPath path' (ListDelete _ x y) = (ListDelete path' x y)
@@ -67,6 +74,7 @@ instance HasPath JSONOperation where
 -- index or object key, if present. This is sometimes more useful.
 class HasFullPath a where
   getFullPath :: a -> Path
+  setFullPath :: Path -> a -> a
 
 instance HasFullPath JSONOperation where
   getFullPath (StringInsert path _ _) = path
@@ -75,6 +83,7 @@ instance HasFullPath JSONOperation where
   getFullPath (ObjectInsert path (Just key) _) = path ++ [Prop key]
   getFullPath (ObjectDelete path (Just key) _) = path ++ [Prop key]
   getFullPath (ObjectReplace path (Just key) _ _ ) = path ++ [Prop key]
+
   getFullPath (ObjectInsert path Nothing _) = path
   getFullPath (ObjectDelete path Nothing _) = path
   getFullPath (ObjectReplace path Nothing _ _ ) = path
@@ -88,6 +97,21 @@ instance HasFullPath JSONOperation where
 
   getFullPath (ApplySubtypeOperation path _ _) = path
   getFullPath x = error $ "getFullPath undefined for: " ++ show x
+
+  setFullPath path' (StringInsert _ x y) = StringInsert path' x y
+  setFullPath path' (StringDelete _ x y) = StringInsert path' x y
+  setFullPath path' (ApplySubtypeOperation _ x y) = ApplySubtypeOperation path' x y
+
+  setFullPath path' (ObjectInsert _ _ y) = ObjectInsert (init path') (Just $ unProp $ last path') y
+  setFullPath path' (ObjectDelete _ _ y) = ObjectDelete (init path') (Just $ unProp $ last path') y
+  setFullPath path' (ObjectReplace _ _ y z) = ObjectReplace (init path') (Just $ unProp $ last path') y z
+
+  setFullPath path' (ListInsert _ _ y) = ListInsert (init path') (unPos $ last path') y
+  setFullPath path' (ListDelete _ _ y) = ListDelete (init path') (unPos $ last path') y
+  setFullPath path' (ListReplace _ _ y z) = ListReplace (init path') (unPos $ last path') y z
+  setFullPath path' (ListMove _ _ y) = ListMove (init path') (unPos $ last path') y
+
+  setFullPath _ x = error [i|setFullPath undefined for #{x}|]
 
 
 isListInsert (ListInsert {}) = True

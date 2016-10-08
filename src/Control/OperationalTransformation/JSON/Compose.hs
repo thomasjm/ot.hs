@@ -20,6 +20,11 @@ compose (ListDelete path1 index1 obj1) (ListInsert path2 index2 obj2)
   | path1 == path2, index1 == index2, obj1 == obj2
   = Right Identity
 
+-- List replace and delete get mashed togeter if possible
+compose (ListReplace path1 index1 obj11 obj12) (ListDelete path2 index2 obj2)
+  | path1 == path2, index1 == index2, obj12 == obj2
+  = Right (ListDelete path1 index1 obj11)
+
 -- String inserts get mashed together if possible
 compose (StringInsert path1 pos1 text1) (StringInsert path2 pos2 text2)
   | path1 == path2, pos2 == pos1 + (T.length text1)
