@@ -10,9 +10,10 @@ module Control.OperationalTransformation.JSON
 
 
 import Control.OperationalTransformation
+import Control.OperationalTransformation.JSON.Affects (affects)
 import qualified Control.OperationalTransformation.JSON.Apply as AP
 import qualified Control.OperationalTransformation.JSON.Compose as C
-import Control.OperationalTransformation.JSON.Transform (affects, transformDouble, transformRight)
+import Control.OperationalTransformation.JSON.Transform (transformDouble, transformRight)
 import Control.OperationalTransformation.JSON.Types
 import qualified Data.Aeson as A
 
