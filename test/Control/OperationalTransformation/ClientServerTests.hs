@@ -6,8 +6,9 @@ module Control.OperationalTransformation.ClientServerTests
 
 import Control.OperationalTransformation
 import Control.OperationalTransformation.Client
+import qualified Control.OperationalTransformation.JSON.Gen as JSONGen
 import Control.OperationalTransformation.Server
-import Control.OperationalTransformation.Text.Gen (genOperation)
+import qualified Control.OperationalTransformation.Text.Gen as TextGen
 import Data.Maybe (fromJust)
 import Test.QuickCheck hiding (reason)
 import Test.QuickCheck.Property
@@ -135,6 +136,16 @@ prop_client_server genOp = property $ do
       _ -> False
 
 tests :: TestTree
-tests = testGroup "Control.OperationalTransformation.ClientServerTests"
-  [ testProperty "prop_client_server" $ prop_client_server genOperation
+tests = testGroup "Control.OperationalTransformation.ClientServerTests" [
+  testGroup "Control.OperationalTransformation.ClientServerTests.Text" [
+      testProperty "prop_client_server" $ prop_client_server TextGen.genOperation
+      ],
+
+  testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
+      testProperty "prop_client_server" $ prop_client_server JSONGen.genOperation
+      ]
   ]
+
+
+main :: IO ()
+main = defaultMain tests
