@@ -116,3 +116,9 @@ instance HasFullPath JSONOperation where
 
 isListInsert (ListInsert {}) = True
 isListInsert _ = False
+
+-- | Get the path and key for an object. Useful for simplifying the "affects" function.
+getObjectPathAndKey (ObjectInsert path key _) = Just (path, key)
+getObjectPathAndKey (ObjectDelete path key _) = Just (path, key)
+getObjectPathAndKey (ObjectReplace path key _ _) = Just (path, key)
+getObjectPathAndKey _ = Nothing

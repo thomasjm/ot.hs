@@ -27,7 +27,6 @@ getIndexInList listPath op | (length listPath) < (length path) = unPos (path !! 
 getIndexInList listPath (ListInsert path pos value) | (length listPath) == (length path) = pos
 getIndexInList listPath (ListDelete path pos value) | (length listPath) == (length path) = pos
 getIndexInList listPath (ListReplace path pos old new) | (length listPath) == (length path) = pos
-getIndexInList listPath (ListMove path pos1 pos2) = error "ListMove is tricky here..."
 getIndexInList x y = error [i|Failed to getIndexInList: #{show x}, #{show y}|]
 
 -- Define x `affects` y if operation x affects operation y
@@ -47,68 +46,60 @@ affects :: JSONOperation -> JSONOperation -> Bool
 affects op1@(getFullPath -> path1) (ListInsert path2 index2 _) | (not $ isListInsert op1)
                                                                , (path2 ++ [Pos index2]) `isPrefixOf` path1 = False
 
+-- ListInsert/ListDelete
+affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | path1 == path2 = index1 <= index2
+-- ListInsert/Anything
+affects (ListInsert listPath listIndex value) op | path <- getPath op
+                                                 , listPath `isPrefixOf` path
+                                                 , index <- getIndexInList listPath op = index >= listIndex
+
+-- ListDelete/Anything
 affects (ListDelete listPath listIndex value) op | path <- getPath op
                                                  , listPath `isPrefixOf` path
                                                  , index <- getIndexInList listPath op = index >= listIndex
 
+-- ListReplace/Anything
 affects (ListReplace listPath listIndex old new) op | path <- getPath op
                                                     , listPath `isPrefixOf` path
                                                     = listIndex == getIndexInList listPath op
+
+-- ListMove/ListMove (operating on same list)
+affects (ListMove listPath1 listIndex11 listIndex12) (ListMove listPath2 listIndex21 listIndex22)
+  | listPath1 == listPath2 = (inRange listIndex21 || inRange listIndex22)
+  where inRange x = (x >= listIndex11) || (x <= listIndex22)
+-- ListMove/Anything
 affects (ListMove listPath listIndex1 listIndex2) op | path <- getPath op
                                                      , listPath `isPrefixOf` path
                                                      , index <- getIndexInList listPath op
                                                      = listIndex1 <= index && index <= listIndex2
 
 -- Objects are simpler
--- Parallel object operations don't affect each other
-affects (ObjectInsert path1 key1 val1) (ObjectInsert path2 key2 val2) = path1 == path2 && key1 == key2
-affects (ObjectInsert path1 key1 val1) (ObjectDelete path2 key2 val2) = path1 == path2 && key1 == key2
-affects (ObjectInsert path1 key1 val1) (ObjectReplace path2 key2 old2 new2) = path1 == path2 && key1 == key2
--- Other operations are only affected if the path is a prefix
-affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
 
--- Parallel object operations don't affect each other
-affects (ObjectDelete path1 key1 val1) (ObjectInsert path2 key2 val2) = path1 == path2 && key1 == key2
-affects (ObjectDelete path1 key1 val1) (ObjectDelete path2 key2 val2) = path1 == path2 && key1 == key2
-affects (ObjectDelete path1 key1 val1) (ObjectReplace path2 key2 old2 new2) = path1 == path2 && key1 == key2
--- Other operations are only affected if the path is a prefix
+-- Parallel object operations only affect each other if they touch the same object
+affects (getObjectPathAndKey -> Just (path1, key1)) (getObjectPathAndKey -> Just (path2, key2)) = path1 == path2 && key1 == key2
+
+-- Object*/Anything: other operations are only affected if the path is a prefix
+affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
 affects (ObjectDelete path1 (Just key) val) (getPath -> path2) = (path1 ++ [Prop key]) `isPrefixOf` path2
 affects (ObjectDelete path1 Nothing val) (getPath -> path2) = path1 `isPrefixOf` path2
-
--- Parallel object operations don't affect each other
-affects (ObjectReplace path1 key1 old1 new1) (ObjectInsert path2 key2 val2) | path1 == path2 = key1 == key2
-affects (ObjectReplace path1 key1 old1 new1) (ObjectDelete path2 key2 val2) | path1 == path2 = key1 == key2
-affects (ObjectReplace path1 key1 old1 new1) (ObjectReplace path2 key2 old2 new2) | path1 == path2 = key1 == key2
--- Other operations are only affected if the path is a prefix
 affects (ObjectReplace path1 (Just key) old new) (getPath -> path2) = (path1 ++ [Prop key]) `isPrefixOf` path2
 affects (ObjectReplace path1 Nothing old new) (getPath -> path2) = path1 `isPrefixOf` path2
 
+-- String*/String*
 affects (StringInsert path1 pos1 s1) (StringInsert path2 pos2 s2) = pos1 <= pos2
 affects (StringDelete path1 pos1 s1) (StringDelete path2 pos2 s2) = pos1 <= pos2
 
 -- A string or subtype operation affects a list delete only if it touches the string being deleted
 -- TODO: collapse this into a single case
-affects (StringInsert path1 pos1 _) (ListDelete path2 pos2 _)
-  = path1 == (path2 ++ [Pos pos2])
-affects (StringDelete path1 pos1 _) (ListDelete path2 pos2 _)
-  = path1 == (path2 ++ [Pos pos2])
-affects (ApplySubtypeOperation path1 _ _) (ListDelete path2 pos2 _)
-  = path1 == (path2 ++ [Pos pos2])
+affects (StringInsert path1 pos1 _) op2@(ListDelete path2 pos2 _) = path1 == getFullPath op2
+affects (StringDelete path1 pos1 _) op2@(ListDelete path2 pos2 _) = path1 == getFullPath op2
+affects (ApplySubtypeOperation path1 _ _) (ListDelete path2 pos2 _) = path1 == (path2 ++ [Pos pos2])
+
 -- A string or subtype operation affects an object delete only if it touches the string being deleted
-affects (StringInsert path1 pos1 _) op2@(ObjectDelete path2 (Just prop2) _)
-  = path1 == getFullPath op2
-affects (StringDelete path1 pos1 _) op2@(ObjectDelete path2 (Just prop2) _)
-  = path1 == getFullPath op2
-affects (ApplySubtypeOperation path1 _ _) op2@(ObjectDelete path2 (Just prop2) _)
-  = path1 == getFullPath op2
+affects (StringInsert path1 pos1 _) op2@(ObjectDelete path2 (Just prop2) _) = path1 == getFullPath op2
+affects (StringDelete path1 pos1 _) op2@(ObjectDelete path2 (Just prop2) _) = path1 == getFullPath op2
+affects (ApplySubtypeOperation path1 _ _) op2@(ObjectDelete path2 (Just prop2) _) = path1 == getFullPath op2
 
-
-affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | path1 == path2 = index1 <= index2
-affects (ListInsert listPath listIndex value) op | path <- getPath op
-                                                 , listPath `isPrefixOf` path
-                                                 , index <- getIndexInList listPath op = index >= listIndex
-
-affects op1@(ListDelete {}) (ListDelete path2 _ _) = getPath op1 == path2
 
 -- Object delete or replace takes precedence over subtype ops
 affects (ApplySubtypeOperation path1 _ _) (ObjectDelete path2 key2 _) | path1 == path2 = False
@@ -224,12 +215,15 @@ transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
 
 
 -- On simultaneous inserts, the left insert wins
-transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) | path1 == path2 && key1 == key2 = Right (ObjectReplace path1 key1 value2 value1, Identity)
+transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) |
+  path1 == path2 && key1 == key2 = Right (ObjectReplace path1 key1 value2 value1, Identity)
 
-transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) | sd1 == sd2 = Right (Identity, Identity)
+transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
+  sd1 == sd2 = Right (Identity, Identity)
 
 transformDouble op1@(ObjectReplace {}) op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
-transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)| value1 == old2 = Right (Identity, ObjectInsert path1 key1 new2)
+transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
+  | value1 == old2 = Right (Identity, ObjectInsert path1 key1 new2)
   | otherwise = error "unhandled so far :/"
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
