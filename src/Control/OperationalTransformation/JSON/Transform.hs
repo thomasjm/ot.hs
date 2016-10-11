@@ -1,10 +1,11 @@
-{-# LANGUAGE TupleSections, ViewPatterns #-}
+{-# LANGUAGE TupleSections, ViewPatterns, MultiWayIf #-}
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings, PatternGuards, QuasiQuotes #-}
 
 module Control.OperationalTransformation.JSON.Transform where
 
 
 import qualified Control.OperationalTransformation as C
+import Control.OperationalTransformation.JSON.Affects (affects)
 import qualified Control.OperationalTransformation.JSON.Apply as Ap
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
@@ -17,11 +18,15 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:[1, 0], si:"hi"}|]
-op2 = parseOp [j|{p:[1], ld:"x"}|]
+op1 = parseOp [j|{p:[4], ld:"x"}|]
+op2 = parseOp [j|{p:[4], lm:10}|]
+foo = affects -- Just to avoid warning that the import is unused
 
--- | In transformRight, the left operation affects the right operation.
+----------------------------------------------------------------------------------
+-- Transform right
+-- In transformRight, the left operation affects the right operation.
 -- So, transform the right operation properly and return it
+----------------------------------------------------------------------------------
 
 -- ListInsert: bump up the index on the right operation
 -- TODO: using init here is hideous, find another way
@@ -31,21 +36,15 @@ transformRight op1@(ListInsert listPath _ val) op2 = Right $ setFullPath path' o
   listPos@(Pos x) = last beginning
   path' = (init beginning) ++ [inc listPos] ++ rest
 
--- TODO: be able to distinguish <= from ==
--- TODO: unify these two ListDelete rules. The second one uses "last" unsafely
+-- ListDelete/ListInsert at same index: ListInsert is unchanged
 transformRight op1@(ListDelete path1 index1 val1) op2@(ListInsert path2 index2 val2)
   | getFullPath op1 == getFullPath op2 = Right op2
-transformRight op1@(ListDelete listPath i val) op2
-  | True = if x == i
-      then Right Identity -- LD deletes index op2 is trying to do something to; deletion
-                          -- takes priority
-                          -- TODO: takes priority over ALL other ops? Should do something more
-                          -- general here?
-      else Right $ setPath path' op2
-      where
-        (beginning, rest) = splitAt ((length listPath) + 1) (getPath op2)
-        listPos@(Pos x) = last beginning
-        path' = (init beginning) ++ [dec listPos] ++ rest
+-- ListDelete/Anything
+transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPath)) . getFullPath) -> Pos i2)
+  = if | i1 == i2 -> Right Identity
+       | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
+       | True -> Right op2
+
 
 transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 where
   (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
@@ -58,10 +57,25 @@ transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 whe
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
 transformRight op1@(ObjectReplace {}) op2 = Right Identity
 
--- A list replace on the same index turns the other thing into a no-op
-transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (path1 ++ [Pos index1]) `isPrefixOf` path2
+-- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
+transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (getFullPath op1) `isPrefixOf` path2
   = Right Identity
+
+-- ListMove/Anything
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i) | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
+  | i > listIndex1 && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
+
+
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
+
+replaceIndex obj at newIndex = setPath path' obj where
+  path = getPath obj
+  path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
+
+----------------------------------------------------------------------------------
+--- Transform double
+----------------------------------------------------------------------------------
 
 -- |In transformDouble, both operations affect the other
 transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
