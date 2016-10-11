@@ -67,6 +67,9 @@ instance HasPath JSONOperation where
   setPath path' (ListMove _ x y) = (ListMove path' x y)
 
   setPath path' (ApplySubtypeOperation _ x y) = ApplySubtypeOperation path' x y
+
+  setPath path' (Add _ k) = Add path' k
+
   setPath _ x = error [i|setPath undefined for #{x}|]
 
 
