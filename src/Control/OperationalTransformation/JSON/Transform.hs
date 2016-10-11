@@ -5,7 +5,7 @@ module Control.OperationalTransformation.JSON.Transform where
 
 
 import qualified Control.OperationalTransformation as C
-import Control.OperationalTransformation.JSON.Affects (affects)
+import Control.OperationalTransformation.JSON.Affects
 import qualified Control.OperationalTransformation.JSON.Apply as Ap
 import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Control.OperationalTransformation.JSON.Types
@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:[4], ld:"x"}|]
-op2 = parseOp [j|{p:[4], lm:10}|]
+op1 = parseOp [j|{p:[5],li:"x"}|]
+op2 = parseOp [j|{p:[5],lm:1}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -61,6 +61,9 @@ transformRight op1@(ObjectReplace {}) op2 = Right Identity
 transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (getFullPath op1) `isPrefixOf` path2
   = Right Identity
 
+-- ListMove/ListInsert on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
+transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _)
+  | path1 == path2 && index11 == index2 && index12 < index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
 -- ListMove/Anything
 transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i) | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
 transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
@@ -69,8 +72,8 @@ transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (len
 
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 
-replaceIndex obj at newIndex = setPath path' obj where
-  path = getPath obj
+replaceIndex obj at newIndex = setFullPath path' obj where
+  path = getFullPath obj
   path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
 
 ----------------------------------------------------------------------------------

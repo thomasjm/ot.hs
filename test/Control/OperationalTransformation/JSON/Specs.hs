@@ -237,25 +237,25 @@ specs = do
 
     it "moves ops on a moved element with the element" $ do
       shouldBe' [j|{p:[10], ld:"x"}|] (transformLeft [j|{p:[4], ld:"x"}|] [j|{p:[4], lm:10}|])
-      -- shouldBe' [j|{p:[10, 1], si:"a"}|] (transformLeft [j|{p:[4, 1], si:"a"}|] [j|{p:[4], lm:10}|])
-      -- shouldBe' [j|{p:[10], t:"text0", o:{p:1, i:"a"}}|] (transformLeft [j|{p:[4], t:"text0", o:{p:1, i:"a"}}|] [j|{p:[4], lm:10}|])
-      -- shouldBe' [j|{p:[10, 1], li:"a"}|] (transformLeft [j|{p:[4, 1], li:"a"}|] [j|{p:[4], lm:10}|])
-      -- shouldBe' [j|{p:[10, 1], ld:"b", li:"a"}|] (transformLeft [j|{p:[4, 1], ld:"b", li:"a"}|] [j|{p:[4], lm:10}|])
+      shouldBe' [j|{p:[10, 1], si:"a"}|] (transformLeft [j|{p:[4, 1], si:"a"}|] [j|{p:[4], lm:10}|])
+      shouldBe' [j|{p:[10], t:"text0", o:[{p:1, i:"a"}]}|] (transformLeft [j|{p:[4], t:"text0", o:[{p:1, i:"a"}]}|] [j|{p:[4], lm:10}|])
+      shouldBe' [j|{p:[10, 1], li:"a"}|] (transformLeft [j|{p:[4, 1], li:"a"}|] [j|{p:[4], lm:10}|])
+      shouldBe' [j|{p:[10, 1], ld:"b", li:"a"}|] (transformLeft [j|{p:[4, 1], ld:"b", li:"a"}|] [j|{p:[4], lm:10}|])
 
       shouldBe' [j|{p:[0],li:null}|] (transformLeft [j|{p:[0],li:null}|] [j|{p:[0],lm:1}|])
-      -- [_,_,_,_,5,6,7,_]
-      -- c: [_,_,_,_,5,"x",6,7,_]   p:5 li:"x"
-      -- s: [_,6,_,_,_,5,7,_]       p:5 lm:1
-      -- correct: [_,6,_,_,_,5,"x",7,_]
-      shouldBe' [j|{p:[6],li:"x"}|] (transformLeft [j|{p:[5],li:"x"}|] [j|{p:[5],lm:1}|])
-      -- [_,_,_,_,5,6,7,_]
-      -- c: [_,_,_,_,5,6,7,_]  p:5 ld:6
-      -- s: [_,6,_,_,_,5,7,_]  p:5 lm:1
-      -- correct: [_,_,_,_,5,7,_]
-      shouldBe' [j|{p:[1],ld:6}|] (transformLeft [j|{p:[5],ld:6}|] [j|{p:[5],lm:1}|])
-      -- shouldBe' [j|{p:[0],li:{}}|] (transformRight [j|{p:[0],li:{}}|] [j|{p:[0],lm:0}|])
-      shouldBe' [j|{p:[0],li:[]}|] (transformLeft [j|{p:[0],li:[]}|] [j|{p:[1],lm:0}|])
-      shouldBe' [j|{p:[2],li:"x"}|] (transformLeft [j|{p:[2],li:"x"}|] [j|{p:[0],lm:1}|])
+      -- -- [_,_,_,_,5,6,7,_]
+      -- -- c: [_,_,_,_,5,"x",6,7,_]   p:5 li:"x"
+      -- -- s: [_,6,_,_,_,5,7,_]       p:5 lm:1
+      -- -- correct: [_,6,_,_,_,5,"x",7,_]
+      -- shouldBe' [j|{p:[6],li:"x"}|] (transformLeft [j|{p:[5],li:"x"}|] [j|{p:[5],lm:1}|])
+      -- -- [_,_,_,_,5,6,7,_]
+      -- -- c: [_,_,_,_,5,6,7,_]  p:5 ld:6
+      -- -- s: [_,6,_,_,_,5,7,_]  p:5 lm:1
+      -- -- correct: [_,_,_,_,5,7,_]
+      -- shouldBe' [j|{p:[1],ld:6}|] (transformLeft [j|{p:[5],ld:6}|] [j|{p:[5],lm:1}|])
+      -- -- shouldBe' [j|{p:[0],li:{}}|] (transformRight [j|{p:[0],li:{}}|] [j|{p:[0],lm:0}|])
+      -- shouldBe' [j|{p:[0],li:[]}|] (transformLeft [j|{p:[0],li:[]}|] [j|{p:[1],lm:0}|])
+      -- shouldBe' [j|{p:[2],li:"x"}|] (transformLeft [j|{p:[2],li:"x"}|] [j|{p:[0],lm:1}|])
 
     it "moves target index on ld/li" $ do
       shouldBe' [j|{p:[0],lm:1}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[1], ld:"x"}|])

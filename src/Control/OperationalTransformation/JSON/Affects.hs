@@ -23,7 +23,9 @@ affects :: JSONOperation -> JSONOperation -> Bool
 
 -- If an operation operates on the same index as a list insert, it does *not* affect the list insert
 -- The exception to this is another list insert, in which case we must break ties
+-- The other exception to this is a ListMove, which is also tricky
 affects op1@(getFullPath -> path1) (ListInsert path2 index2 _) | (not $ isListInsert op1)
+                                                               , (not $ isListMove op1)
                                                                , (path2 ++ [Pos index2]) `isPrefixOf` path1 = False
 
 -- ListInsert/ListDelete
@@ -46,14 +48,14 @@ affects (ListReplace listPath listIndex old new) op | path <- getPath op
 -- ListMove/ListMove (operating on same list)
 affects (ListMove listPath1 listIndex11 listIndex12) (ListMove listPath2 listIndex21 listIndex22)
   | listPath1 == listPath2 = (inRange listIndex21 || inRange listIndex22)
-  where inRange x = (x >= listIndex11) || (x <= listIndex22)
+  where inRange x = (x >= (min listIndex11 listIndex12)) && (x <= (max listIndex11 listIndex12))
 -- ListMove/Anything
-affects (ListMove listPath listIndex1 listIndex2) op | path <- getPath op
-                                                     , listPath `isPrefixOf` path
+affects (ListMove listPath listIndex1 listIndex2) op | listPath `isPrefixOf` (getFullPath op)
                                                      , index <- getIndexInList listPath op
-                                                     = listIndex1 <= index && index <= listIndex2
+                                                     = inRange index
+  where inRange x = (x >= (min listIndex1 listIndex2)) && (x <= (max listIndex1 listIndex2))
 
--- Objects are simpler
+-- * Objects are simpler
 
 -- Parallel object operations only affect each other if they touch the same object
 affects (getObjectPathAndKey -> Just (path1, key1)) (getObjectPathAndKey -> Just (path2, key2)) = path1 == path2 && key1 == key2
