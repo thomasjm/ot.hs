@@ -390,11 +390,11 @@ specs = do
 
     it "Deleted data is changed to reflect edits" $ do
       shouldBe' [j|{p:["1"], od:"abc"}|] (transformLeft [j|{p:["1"], od:"a"}|] [j|{p:["1", 1], si:"bc"}|])
-      -- shouldBe' [j|{p:["1"], od:"abc"}|] (transformLeft [j|{p:["1"], od:"a"}|] [j|{p:["1"], t:"text0", o:[{p:1, i:"bc"}]}|])
-      -- shouldBe' [j|{p:[],od:25,oi:[]}|] (transformLeft [j|{p:[],od:22,oi:[]}|] [j|{p:[],na:3}|])
-      -- shouldBe' [j|{p:[],od:{toves:""},oi:4}|] (transformLeft [j|{p:[],od:{toves:0},oi:4}|] [j|{p:["toves"],od:0,oi:""}|])
-      -- shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[7],sd:"d "}|])
-      -- shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[], t:"text0", o:[{p:7, d:"d "}]}|])
+      shouldBe' [j|{p:["1"], od:"abc"}|] (transformLeft [j|{p:["1"], od:"a"}|] [j|{p:["1"], t:"text0", o:[{p:1, i:"bc"}]}|])
+      shouldBe' [j|{p:[],od:25,oi:[]}|] (transformLeft [j|{p:[],od:22,oi:[]}|] [j|{p:[],na:3}|])
+      --shouldBe' [j|{p:[],od:{toves:""},oi:4}|] (transformLeft [j|{p:[],od:{toves:0},oi:4}|] [j|{p:["toves"],od:0,oi:""}|])
+       --shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[7],sd:"d "}|])
+       --shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[], t:"text0", o:[{p:7, d:"d "}]}|])
       -- shouldBe' [j|{}|] (transformRight [j|{p:["bird"],na:2}|] [j|{p:[],od:{bird:38},oi:20}|])
       -- shouldBe' [j|{p:[],od:{bird:40},oi:20}|] (transformLeft [j|{p:[],od:{bird:38},oi:20}|] [j|{p:["bird"],na:2}|])
       -- shouldBe' [j|{p:["He"],od:[]}|] (transformRight [j|{p:["He"],od:[]}|] [j|{p:["The"],na:-3}|])
@@ -415,7 +415,7 @@ specs = do
     it "replacement vs. deletion" $ do
       shouldBe' [j|{p:[],oi:{}}|] (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""]}|])
 
-    -- it "replacement vs. replacement" $ do
+     --it "replacement vs. replacement" $ do
     --   shouldBe' [],                    (transformRight [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
     --   shouldBe' [j|{p:[],od:null,oi:{}}|] (transformLeft [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
     --   shouldBe' [],                    (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])

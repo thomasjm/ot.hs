@@ -150,7 +150,6 @@ transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 ke
   | value1 == old2 = Right (Identity, ObjectInsert path1 key1 new2)
   | otherwise = error "unhandled so far :/"
 
--- TODO: handle non `hasPath` cases
 transformDouble op1 op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
 transformDouble op1@(ObjectDelete path key value) op2
   = (\v -> (ObjectDelete path key v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
@@ -159,6 +158,16 @@ transformDouble op1@(ObjectDelete path key value) op2
     -- We use `[]` for the path because we're applying the operation to `value`, not to the
     -- entire JSON structure
     op2' = setPath [] op2
+
+transformDouble op1 op2@(ObjectReplace {}) = rev <$> transformDouble op2 op1
+transformDouble op1@(ObjectReplace path key old new) op2
+  = (\old' -> (ObjectReplace path key old' new, Identity)) <$> Ap.apply op2' old -- TODO: lens this up
+  where
+    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
+    -- We use `[]` for the path because we're applying the operation to `value`, not to the
+    -- entire JSON structure
+    op2' = setPath [] op2
+
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
 -- for the cases where the transformations don't depend on each other
