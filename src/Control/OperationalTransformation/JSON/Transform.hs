@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:["He"],oi:{}}|]
-op2 = parseOp [j|{p:[],od:{},oi:"the"}|]
+op1 = parseOp [j|{p:["1"], t:"text0", o:[{p:0, i:"hi"}]}|]
+op2 = parseOp [j|{p:["1"], od:"x", oi:"y"}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -54,9 +54,9 @@ transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 whe
 
 -- An operation that affects a replace or delete means we need to change what's removed
 transformRight op1 op2@(ObjectReplace path key old new) =
-  (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length path) (getPath op1)) op1) old)
+  (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 transformRight op1 op2@(ObjectDelete path key old) =
-  (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length path) (getPath op1)) op1) old)
+  (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 
 -- An object delete or replace turns the other operation into a no-op
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
