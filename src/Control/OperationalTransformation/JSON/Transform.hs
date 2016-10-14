@@ -45,22 +45,26 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
 
+-- An operation that affects a replace or delete means we need to change what's removed
+transformRight op1 op2@(ObjectReplace path key old new) =
+  (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
+transformRight op1 op2@(ObjectDelete path key old) =
+  (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
+transformRight op1 op2@(ListDelete path i value) =
+  (\value' -> ListDelete path i value') <$> Ap.apply (setPath [] op1) value
+
+-- A delete or replace turns the other operation into a no-op
+transformRight op1@(ObjectDelete {}) op2 = Right Identity
+transformRight op1@(ObjectReplace {}) op2 = Right Identity
+transformRight op1@(ListDelete {}) op2 = Right Identity
+
+-- StringInsert/Anything
 transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 where
   (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
   prop@(Prop x) = last beginning
   (pre, post) = T.splitAt i x
   prop' = Prop $ pre `T.append` str `T.append` post
   path' = (init beginning) ++ [prop'] ++ rest
-
--- An operation that affects a replace or delete means we need to change what's removed
-transformRight op1 op2@(ObjectReplace path key old new) =
-  (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
-transformRight op1 op2@(ObjectDelete path key old) =
-  (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
-
--- An object delete or replace turns the other operation into a no-op
-transformRight op1@(ObjectDelete {}) op2 = Right Identity
-transformRight op1@(ObjectReplace {}) op2 = Right Identity
 
 -- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
 transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (getFullPath op1) `isPrefixOf` path2
@@ -106,42 +110,12 @@ transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2
   | op1 /= op2 = error "Fatal: operations do not both affect each other"
   | otherwise = Right (Identity, Identity)
 
-transformDouble op1@(StringInsert {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
--- We also assume `value` must be a string; we should probably assert that(?)
-transformDouble op1@(ListDelete path1 i value) op2@(StringInsert {})
-  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
-  where
-    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
-    -- We use `[]` for the path because we're applying the operation to `value`, not to the
-    -- entire JSON structure
-    op2' = setPath [] op2
-
-transformDouble op1@(StringDelete {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
--- We also assume `value` must be a string; we should probably assert that(?)
-transformDouble op1@(ListDelete path1 i value) op2@(StringDelete {})
-  = (\v -> (ListDelete path1 i v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
-  where
-    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
-    -- We use `[]` for the path because we're applying the operation to `value`, not to the
-    -- entire JSON structure
-    op2' = setPath [] op2
-
-transformDouble op1@(ApplySubtypeOperation {}) op2@(ListDelete {}) = rev <$> transformDouble op2 op1
-transformDouble op1@(ListDelete path1 i1 value1) op2@(ApplySubtypeOperation {})
-  = (\v -> (ListDelete path1 i1 v, Identity)) <$> Ap.apply op2' value1
-  where
-    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
-    -- We use `[]` for the path because we're applying the operation to `value`, not to the
-    -- entire JSON structure
-    op2' = setPath [] op2
-
 -- we know both operations affect each other, and our operations are both
 -- `ObjectDelete`s, so we know `path1 == path2`
 transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
   | op1 == op2 = Right (Identity, Identity)
   | key1 == key1 = Right (Identity, Identity) -- inconsistent state, so we behave forgivingly
   | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
-
 
 -- On simultaneous inserts, the left insert wins
 transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) |
@@ -157,13 +131,7 @@ transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 ke
 
 transformDouble op1 op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
 transformDouble op1@(ObjectDelete path key value) op2
-  = (\v -> (ObjectDelete path key v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
-  where
-    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
-    -- We use `[]` for the path because we're applying the operation to `value`, not to the
-    -- entire JSON structure
-    op2' = setPath [] op2
-
+  = (\v -> (ObjectDelete path key v, Identity)) <$> Ap.apply (setPath [] op2) value -- TODO: lens this up
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
 -- for the cases where the transformations don't depend on each other

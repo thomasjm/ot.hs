@@ -134,3 +134,9 @@ getObjectPathAndKey _ = Nothing
 getDeleteOrReplace obj@(ObjectDelete {}) = Just obj
 getDeleteOrReplace obj@(ObjectReplace {}) = Just obj
 getDeleteOrReplace _ = Nothing
+
+getPrimitive obj@(Add {}) = Just obj
+getPrimitive obj@(StringInsert {}) = Just obj
+getPrimitive obj@(StringDelete {}) = Just obj
+getPrimitive obj@(ApplySubtypeOperation {}) = Just obj
+getPrimitive _ = Nothing
