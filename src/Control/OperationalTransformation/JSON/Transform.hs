@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:["1"], t:"text0", o:[{p:0, i:"hi"}]}|]
-op2 = parseOp [j|{p:["1"], od:"x", oi:"y"}|]
+op1 = parseOp [j|{p:[],od:[""],oi:{}}|]
+op2 = parseOp [j|{p:[],od:[""]}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -45,7 +45,12 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
 
--- An operation that affects a replace or delete means we need to change what's removed
+-- A replace affecting a delete turns into an insert
+transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
+  | getFullPath op1 == getFullPath op2
+  , value1 == old2 = Right $ ObjectInsert path1 key1 new2
+  | otherwise = error "unhandled so far :/"
+-- Otherwise, an operation that affects a replace or delete means we need to change what's removed
 transformRight op1 op2@(ObjectReplace path key old new) =
   (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 transformRight op1 op2@(ObjectDelete path key old) =
@@ -123,15 +128,6 @@ transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key
 
 transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
   sd1 == sd2 = Right (Identity, Identity)
-
-transformDouble op1@(ObjectReplace {}) op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
-transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
-  | value1 == old2 = Right (Identity, ObjectInsert path1 key1 new2)
-  | otherwise = error "unhandled so far :/"
-
-transformDouble op1 op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
-transformDouble op1@(ObjectDelete path key value) op2
-  = (\v -> (ObjectDelete path key v, Identity)) <$> Ap.apply (setPath [] op2) value -- TODO: lens this up
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
 -- for the cases where the transformations don't depend on each other
