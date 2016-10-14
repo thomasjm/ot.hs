@@ -55,7 +55,7 @@ instance HasPath JSONOperation where
   getPath x = error $ "getPath undefined for: " ++ show x
 
   setPath path' (StringInsert _ x y) = (StringInsert path' x y)
-  setPath path' (StringDelete _ x y) = (StringInsert path' x y)
+  setPath path' (StringDelete _ x y) = (StringDelete path' x y)
 
   setPath path' (ObjectInsert _ x y) = (ObjectInsert path' x y)
   setPath path' (ObjectDelete _ x y) = (ObjectDelete path' x y)
@@ -129,3 +129,8 @@ getObjectPathAndKey (ObjectInsert path key _) = Just (path, key)
 getObjectPathAndKey (ObjectDelete path key _) = Just (path, key)
 getObjectPathAndKey (ObjectReplace path key _ _) = Just (path, key)
 getObjectPathAndKey _ = Nothing
+
+-- getObject obj@(ObjectInsert {}) = Just obj
+getDeleteOrReplace obj@(ObjectDelete {}) = Just obj
+getDeleteOrReplace obj@(ObjectReplace {}) = Just obj
+getDeleteOrReplace _ = Nothing

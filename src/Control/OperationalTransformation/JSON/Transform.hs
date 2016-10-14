@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:[5],li:"x"}|]
-op2 = parseOp [j|{p:[5],lm:1}|]
+op1 = parseOp [j|{p:["He"],oi:{}}|]
+op2 = parseOp [j|{p:[],od:{},oi:"the"}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -45,13 +45,18 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
 
-
 transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 where
   (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
   prop@(Prop x) = last beginning
   (pre, post) = T.splitAt i x
   prop' = Prop $ pre `T.append` str `T.append` post
   path' = (init beginning) ++ [prop'] ++ rest
+
+-- An operation that affects a replace or delete means we need to change what's removed
+transformRight op1 op2@(ObjectReplace path key old new) =
+  (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length path) (getPath op1)) op1) old)
+transformRight op1 op2@(ObjectDelete path key old) =
+  (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length path) (getPath op1)) op1) old)
 
 -- An object delete or replace turns the other operation into a no-op
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
@@ -83,7 +88,7 @@ replaceIndex obj at newIndex = setFullPath path' obj where
 -- |In transformDouble, both operations affect the other
 transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
 transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2)
-  | (path2 == path1) && (i1 >  i2) = undefined -- TODO rev <$> transform op2 op1 -- WLOG
+  | (path2 == path1) && (i1 > i2) = error "Problem with transformDouble ListInsert/ListInsert" -- TODO rev <$> transform op2 op1 -- WLOG
   | (path2 == path1) && (i1 <= i2) = Right (op1, ListInsert path2 (succ i2) value2)
   | (path2 `isPrefixOf` path1) = undefined -- TODO rev <$> transform op2 op1 -- WLOG
   | (path1 `isPrefixOf` path2) = Right (op1, op2) -- TODO: increment the appropriate part of path2
@@ -153,15 +158,6 @@ transformDouble op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 ke
 transformDouble op1 op2@(ObjectDelete {}) = rev <$> transformDouble op2 op1
 transformDouble op1@(ObjectDelete path key value) op2
   = (\v -> (ObjectDelete path key v, Identity)) <$> Ap.apply op2' value -- TODO: lens this up
-  where
-    -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
-    -- We use `[]` for the path because we're applying the operation to `value`, not to the
-    -- entire JSON structure
-    op2' = setPath [] op2
-
-transformDouble op1 op2@(ObjectReplace {}) = rev <$> transformDouble op2 op1
-transformDouble op1@(ObjectReplace path key old new) op2
-  = (\old' -> (ObjectReplace path key old' new, Identity)) <$> Ap.apply op2' old -- TODO: lens this up
   where
     -- Here `'` does not mean it's a part of the output of `transform`; it's just a modified `op2`
     -- We use `[]` for the path because we're applying the operation to `value`, not to the

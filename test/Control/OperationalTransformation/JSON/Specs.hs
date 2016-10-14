@@ -392,13 +392,13 @@ specs = do
       shouldBe' [j|{p:["1"], od:"abc"}|] (transformLeft [j|{p:["1"], od:"a"}|] [j|{p:["1", 1], si:"bc"}|])
       shouldBe' [j|{p:["1"], od:"abc"}|] (transformLeft [j|{p:["1"], od:"a"}|] [j|{p:["1"], t:"text0", o:[{p:1, i:"bc"}]}|])
       shouldBe' [j|{p:[],od:25,oi:[]}|] (transformLeft [j|{p:[],od:22,oi:[]}|] [j|{p:[],na:3}|])
-      --shouldBe' [j|{p:[],od:{toves:""},oi:4}|] (transformLeft [j|{p:[],od:{toves:0},oi:4}|] [j|{p:["toves"],od:0,oi:""}|])
-       --shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[7],sd:"d "}|])
-       --shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[], t:"text0", o:[{p:7, d:"d "}]}|])
-      -- shouldBe' [j|{}|] (transformRight [j|{p:["bird"],na:2}|] [j|{p:[],od:{bird:38},oi:20}|])
-      -- shouldBe' [j|{p:[],od:{bird:40},oi:20}|] (transformLeft [j|{p:[],od:{bird:38},oi:20}|] [j|{p:["bird"],na:2}|])
-      -- shouldBe' [j|{p:["He"],od:[]}|] (transformRight [j|{p:["He"],od:[]}|] [j|{p:["The"],na:-3}|])
-      -- shouldBe' [j|{}|] (transformLeft [j|{p:["He"],oi:{}}|] [j|{p:[],od:{},oi:"the"}|])
+      shouldBe' [j|{p:[],od:{toves:""},oi:4}|] (transformLeft [j|{p:[],od:{toves:0},oi:4}|] [j|{p:["toves"],od:0,oi:""}|])
+      shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[7],sd:"d "}|])
+      shouldBe' [j|{p:[],od:"thou an",oi:[]}|] (transformLeft [j|{p:[],od:"thou and ",oi:[]}|] [j|{p:[], t:"text0", o:[{p:7, d:"d "}]}|])
+      shouldBe' [j|{}|] (transformRight [j|{p:["bird"],na:2}|] [j|{p:[],od:{bird:38},oi:20}|])
+      shouldBe' [j|{p:[],od:{bird:40},oi:20}|] (transformLeft [j|{p:[],od:{bird:38},oi:20}|] [j|{p:["bird"],na:2}|])
+      shouldBe' [j|{p:["He"],od:[]}|] (transformRight [j|{p:["He"],od:[]}|] [j|{p:["The"],na:-3}|])
+      shouldBe' [j|{}|] (transformLeft [j|{p:["He"],oi:{}}|] [j|{p:[],od:{},oi:"the"}|])
 
     it "If two inserts are simultaneous, the lefts insert will win" $ do
       shouldBe' [j|{p:["1"], oi:"a", od:"b"}|] (transformLeft [j|{p:["1"], oi:"a"}|] [j|{p:["1"], oi:"b"}|])
@@ -409,16 +409,15 @@ specs = do
       shouldBe' [j|{p:["a"], oi: "x"}|] (transformLeft [j|{p:["a"], oi:"x"}|] [j|{p:["b"], od:"z"}|])
       shouldBe' [j|{p:["in","he"],oi:{}}|] (transformRight [j|{p:["in","he"],oi:{}}|] [j|{p:["and"],od:{}}|])
       shouldBe' [j|{p:["x",0],si:"his "}|] (transformRight [j|{p:["x",0],si:"his "}|] [j|{p:["y"],od:0,oi:1}|])
-      -- TODO: need to implement text0 to make this work
-      -- shouldBe' [j|{p:["x"], t:"text0", o:[{p:0, i:"his "}]}|] (transformRight [j|{p:["x"],t:"text0", o:[{p:0, i:"his "}]}|] [j|{p:["y"],od:0,oi:1}|])
+      shouldBe' [j|{p:["x"], t:"text0", o:[{p:0, i:"his "}]}|] (transformRight [j|{p:["x"],t:"text0", o:[{p:0, i:"his "}]}|] [j|{p:["y"],od:0,oi:1}|])
 
     it "replacement vs. deletion" $ do
       shouldBe' [j|{p:[],oi:{}}|] (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""]}|])
 
-     --it "replacement vs. replacement" $ do
-    --   shouldBe' [],                    (transformRight [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
+    -- it "replacement vs. replacement" $ do
+    --   shouldBe' [] (transformRight [j|{p:[],od:[""]}|,{p:[],oi:{}}|] [j|{p:[],od:[""]}|,{p:[],oi:null}])|]
     --   shouldBe' [j|{p:[],od:null,oi:{}}|] (transformLeft [j|{p:[],od:[""]}|,{p:[],oi:{}}] [j|{p:[],od:[""]}|,{p:[],oi:null}])
-    --   shouldBe' [],                    (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])
+    --   shouldBe' [] (transformRight [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])
     --   shouldBe' [j|{p:[],od:null,oi:{}}|] (transformLeft [j|{p:[],od:[""],oi:{}}|] [j|{p:[],od:[""],oi:null}|])
 
     --   -- test diamond property

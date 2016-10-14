@@ -57,8 +57,15 @@ affects (ListMove listPath listIndex1 listIndex2) op | listPath `isPrefixOf` (ge
 
 -- * Objects are simpler
 
--- Parallel object operations only affect each other if they touch the same object
+-- An operation inside a deleted or replaced object affects the delete/replace
+affects op1 ((\x -> getFullPath <$> getDeleteOrReplace x) -> Just path2) | path2 `isPrefixOf` (getFullPath op1) = True
+-- An operation inside a deleted or replaced object is affected (it becomes a no-op)
+affects ((\x -> getFullPath <$> getDeleteOrReplace x) -> Just path1) op2 | path1 `isPrefixOf` (getFullPath op2) = True
+
 affects (getObjectPathAndKey -> Just (path1, key1)) (getObjectPathAndKey -> Just (path2, key2)) = path1 == path2 && key1 == key2
+
+-- Otherwise, parallel object operations only affect each other if they touch the same object
+-- affects ((\x -> getFullPath <$> getObject x) -> Just path1) ((\x -> getFullPath <$> getObject x) -> Just path2) = path1 `isPrefixOf` path2
 
 -- Object*/Anything: other operations are only affected if the path is a prefix
 affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
