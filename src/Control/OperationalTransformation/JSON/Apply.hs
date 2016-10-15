@@ -8,6 +8,7 @@ import Control.OperationalTransformation.JSON.QuasiQuote (j)
 -- import Control.OperationalTransformation.JSON.Transform ()
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
+import Data.String.Interpolate.IsString
 import Data.Aeson.Lens
 import Data.Monoid
 import qualified Data.Text as T
@@ -69,7 +70,7 @@ apply (ListReplace path pos old new) input = case input ^? (listAtPath path) of
 
 -- TODO
 apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
-  Nothing -> Left "Couldn't find list in ListMove"
+  Nothing -> Left [i|Couldn't find list at path #{show path} in ListMove|]
   Just l -> Right $ set (listAtPath path) (vectorMove l pos1 pos2) input
 
 apply (ObjectInsert path (Just k) value) input = case input ^? (objectAtPath path) of

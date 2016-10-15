@@ -123,6 +123,9 @@ isListInsert _ = False
 isListMove (ListMove {}) = True
 isListMove _ = False
 
+replaceIndex obj at newIndex = setFullPath path' obj where
+  path = getFullPath obj
+  path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
 
 -- | Get the path and key for an object. Useful for simplifying the "affects" function.
 getObjectPathAndKey (ObjectInsert path key _) = Just (path, key)

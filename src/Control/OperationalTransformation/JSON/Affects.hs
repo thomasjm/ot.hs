@@ -28,15 +28,21 @@ affects op1@(getFullPath -> path1) (ListInsert path2 index2 _) | (not $ isListIn
                                                                , (not $ isListMove op1)
                                                                , (path2 ++ [Pos index2]) `isPrefixOf` path1 = False
 
+-- ListDelete/ListMove: the delete affects the move if it is in or before the move range
+affects (ListDelete path1 index1 value1) (ListMove path2 index21 index22)
+  | path1 == path2 = index1 <= (max index21 index22)
+-- ListInsert/ListMove: the insert affects the move if it is in or before the move range
+affects (ListInsert path1 index1 value1) (ListMove path2 index21 index22)
+  | path1 == path2 = index1 <= (max index21 index22)
+-- ListDelete/Anything
+affects (ListDelete listPath listIndex value) op | path <- getPath op
+                                                 , listPath `isPrefixOf` path
+                                                 , index <- getIndexInList listPath op = index >= listIndex
+
 -- ListInsert/ListDelete
 affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | path1 == path2 = index1 <= index2
 -- ListInsert/Anything
 affects (ListInsert listPath listIndex value) op | path <- getPath op
-                                                 , listPath `isPrefixOf` path
-                                                 , index <- getIndexInList listPath op = index >= listIndex
-
--- ListDelete/Anything
-affects (ListDelete listPath listIndex value) op | path <- getPath op
                                                  , listPath `isPrefixOf` path
                                                  , index <- getIndexInList listPath op = index >= listIndex
 

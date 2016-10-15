@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:[],od:[""],oi:{}}|]
-op2 = parseOp [j|{p:[],od:[""]}|]
+op1 = parseOp [j|{p:[0],ld:"x",li:"y"}|]
+op2 = parseOp [j|{p:[0],ld:"x"}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -28,9 +28,54 @@ foo = affects -- Just to avoid warning that the import is unused
 -- So, transform the right operation properly and return it
 ----------------------------------------------------------------------------------
 
+
 -- ListInsert: bump up the index on the right operation
 -- TODO: using init here is hideous, find another way
 transformRight :: JSONOperation -> JSONOperation -> Either String JSONOperation
+
+-- ListDelete/ListMove
+transformRight op1@(ListDelete path1 index1 _) op2@(ListMove path2 index21 index22) =
+  if -- Delete of the thing being moved makes the move a no-op
+     | path1 == path2 && index1 == index21 -> Right Identity
+     -- Delete in the middle of the range causes the top index to go down
+     | path1 == path2 && index1 > bottom && index1 < top && index22 > index21 -> Right $ ListMove path2 index21 (index22 - 1)
+     | path1 == path2 && index1 > bottom && index1 < top && index22 < index21 -> Right $ ListMove path2 (index21 - 1) index22
+     -- Delete before the range causes both indices to go down
+     | path1 == path2 && index1 <= bottom -> Right $ ListMove path2 (index21 - 1) (index22 - 1)
+     -- Otherwise, no change
+     | otherwise -> Right op2
+  where bottom = min index21 index22
+        top = max index21 index22
+-- ListInsert/ListMove
+transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index22) =
+  if -- Insert in the middle of the range causes the top index to go up
+     | path1 == path2 && index1 > bottom && index1 < top && index22 > index21 -> Right $ ListMove path2 index21 (index22 + 1)
+     | path1 == path2 && index1 > bottom && index1 < top && index22 < index21 -> Right $ ListMove path2 (index21 + 1) index22
+     -- Insert before the range causes both indices to go up
+     | path1 == path2 && index1 <= bottom -> Right $ ListMove path2 (index21 + 1) (index22 + 1)
+     -- Otherwise, no change
+     | otherwise -> Right op2
+  where bottom = min index21 index22
+        top = max index21 index22
+
+-- ListMove/ListInsert
+transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _)
+  -- on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
+  | path1 == path2 && index11 == index2 && index12 < index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
+  -- If the ListInsert is at or before the smaller index of the ListMove, it's not affected. TODO: cover this in `affects`
+  | path1 == path2 && index2 <= (min index11 index12) = Right op2
+  -- If the ListInsert is at or after the larger index of the LiveMove, it's not affected
+  | path1 == path2 && index2 >= (max index11 index12) = Right op2
+-- ListMove/Anything
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
+  | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
+  | i > listIndex1 && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
+
+-- ListDelete/ListReplace: a delete affecting a replace turns into an insert. TODO: what if the delete is inside the replace?
+transformRight op1@(ListDelete path1 index1 value1) op2@(ListReplace path2 index2 old new)
+  | path1 == path2 && index1 == index2 = Right $ ListInsert path2 index2 new
+
 transformRight op1@(ListInsert listPath _ val) op2 = Right $ setFullPath path' op2 where
   (beginning, rest) = splitAt ((length $ getFullPath op1) + 1) (getFullPath op2)
   listPos@(Pos x) = last beginning
@@ -45,7 +90,7 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
 
--- A replace affecting a delete turns into an insert
+-- A delete affecting a replace turns into an insert
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
   | getFullPath op1 == getFullPath op2
   , value1 == old2 = Right $ ObjectInsert path1 key1 new2
@@ -56,14 +101,14 @@ transformRight op1 op2@(ObjectReplace path key old new) =
 transformRight op1 op2@(ObjectDelete path key old) =
   (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 transformRight op1 op2@(ListDelete path i value) =
-  (\value' -> ListDelete path i value') <$> Ap.apply (setPath [] op1) value
+  (\value' -> ListDelete path i value') <$> Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) value
 
 -- A delete or replace turns the other operation into a no-op
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
 transformRight op1@(ObjectReplace {}) op2 = Right Identity
 transformRight op1@(ListDelete {}) op2 = Right Identity
 
--- StringInsert/Anything
+-- StringInsert/Anything. TODO: extend this to general primitive ops.
 transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 where
   (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
   prop@(Prop x) = last beginning
@@ -75,20 +120,8 @@ transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 whe
 transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (getFullPath op1) `isPrefixOf` path2
   = Right Identity
 
--- ListMove/ListInsert on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
-transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _)
-  | path1 == path2 && index11 == index2 && index12 < index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
--- ListMove/Anything
-transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i) | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
-transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
-  | i > listIndex1 && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
-
 
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
-
-replaceIndex obj at newIndex = setFullPath path' obj where
-  path = getFullPath obj
-  path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
 
 ----------------------------------------------------------------------------------
 --- Transform double

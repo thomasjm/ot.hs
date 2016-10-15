@@ -81,7 +81,7 @@ specs = do
     --  it "merges od+oi, od+oi -> od+oi" $ do
     --    shouldBe' [j|{p:["foo"], od:1, oi:2}|] (compose [j|{p:["foo"],od:1,oi:3}|] [j|{p:["foo"],od:3,oi:2}|])
 
-  describe "#transform() stuff" $ do
+  describe "transform() stuff" $ do
    it "returns sane values" $ do
      let t = \op1 op2 -> op1 `shouldBe'` transformLeft op1 op2
 
@@ -116,12 +116,12 @@ specs = do
 
   -- # Strings should be handled internally by the text type. We"ll just do some basic sanity checks here.
   describe "string" $ do
-    describe "#apply()" $ it "works" $ do
+    describe "apply()" $ it "works" $ do
       shouldBe' [j|"abc"|] (apply [j|"a"|] [j|{p:[1], si:"bc"}|])
       shouldBe' [j|"bc"|] (apply [j|"abc"|] [j|{p:[0], sd:"a"}|])
       shouldBe' [j|{x:"abc"}|] (apply [j|{x:"a"}|] [j|{p:["x", 1], si:"bc"}|])
 
-  describe "#transform()" $ do
+  describe "transform()" $ do
     -- TODO: how to deal with lists of ops?
     -- it "splits deletes" $ do
     --   shouldBe' [[j|{p:[0], sd:"a"}|], [j|{p:[1], sd:"b"}|]] (transformLeft [j|{p:[0], sd:"ab"}|] [j|{p:[1], si:"x"}|])
@@ -133,13 +133,13 @@ specs = do
       shouldBe' [j|{}|] (transformLeft [j|{p: ["k", 5], si:""}|] [j|{p: ["k", 3], si: "a"}|])
 
   describe "string subtype" $ do
-    describe "#apply()" $ do
+    describe "apply()" $ do
       it "works" $ do
         shouldBe [j|"abc"|] (apply [j|"a"|] [j|{p:[], t:"text0", o:[{p:1, i:"bc"}]}|])
         shouldBe [j|{x:"abc"}|] (apply [j|{x:"a"}|] [j|{p:["x"], t:"text0", o:[{p:1, i:"bc"}]}|])
         shouldBe [j|"bc"|] (apply [j|"abc"|] [j|{p:[], t:"text0", o:[{p:0, d:"a"}]}|])
 
-    describe "#transform()" $ do
+    describe "transform()" $ do
       it "splits deletes" $ do
         let a = [j|{p:[], t:"text0", o:[{p:0, d:"ab"}]}|]
         let b = [j|{p:[], t:"text0", o:[{p:1, i:"x"}]}|]
@@ -175,7 +175,7 @@ specs = do
       --   shouldBe' [], type.compose [], [{p:[0,3],lm:3}]
       --   shouldBe' [], type.compose [], [{p:["x","y",0],lm:0}]
 
-  describe "#transform()" $ do
+  describe "transform()" $ do
     it "bumps paths when list elements are inserted or removed" $ do
       shouldBe' [j|{p:[2, 200], si:"hi"}|] (transformLeft [j|{p:[1, 200], si:"hi"}|] [j|{p:[0], li:"x"}|])
       shouldBe' [j|{p:[1, 201], si:"hi"}|] (transformRight [j|{p:[0, 201], si:"hi"}|] [j|{p:[0], li:"x"}|])
@@ -225,7 +225,7 @@ specs = do
       shouldBe' [j|{}|] (transformRight [j|{p:[1], ld:"x"}|] [j|{p:[1], ld:"x"}|])
 
 
-    describe "#compose()" $ do
+    describe "compose()" $ do
       it "composes insert then delete into a no-op" $ do
         shouldBe' [j|{}|] (compose [j|{p:[1], li:"abc"}|] [j|{p:[1], ld:"abc"}|])
         shouldBe' [j|{p:[0],ld:"abc"}|] (compose [j|{p:[0],ld:"abc",li:null}|] [j|{p:[0],ld:null}|])
@@ -247,15 +247,15 @@ specs = do
       -- -- c: [_,_,_,_,5,"x",6,7,_]   p:5 li:"x"
       -- -- s: [_,6,_,_,_,5,7,_]       p:5 lm:1
       -- -- correct: [_,6,_,_,_,5,"x",7,_]
-      -- shouldBe' [j|{p:[6],li:"x"}|] (transformLeft [j|{p:[5],li:"x"}|] [j|{p:[5],lm:1}|])
+      shouldBe' [j|{p:[6],li:"x"}|] (transformLeft [j|{p:[5],li:"x"}|] [j|{p:[5],lm:1}|])
       -- -- [_,_,_,_,5,6,7,_]
       -- -- c: [_,_,_,_,5,6,7,_]  p:5 ld:6
       -- -- s: [_,6,_,_,_,5,7,_]  p:5 lm:1
       -- -- correct: [_,_,_,_,5,7,_]
-      -- shouldBe' [j|{p:[1],ld:6}|] (transformLeft [j|{p:[5],ld:6}|] [j|{p:[5],lm:1}|])
-      -- -- shouldBe' [j|{p:[0],li:{}}|] (transformRight [j|{p:[0],li:{}}|] [j|{p:[0],lm:0}|])
-      -- shouldBe' [j|{p:[0],li:[]}|] (transformLeft [j|{p:[0],li:[]}|] [j|{p:[1],lm:0}|])
-      -- shouldBe' [j|{p:[2],li:"x"}|] (transformLeft [j|{p:[2],li:"x"}|] [j|{p:[0],lm:1}|])
+      shouldBe' [j|{p:[1],ld:6}|] (transformLeft [j|{p:[5],ld:6}|] [j|{p:[5],lm:1}|])
+      shouldBe' [j|{p:[0],li:{}}|] (transformRight [j|{p:[0],li:{}}|] [j|{p:[0],lm:0}|])
+      shouldBe' [j|{p:[0],li:[]}|] (transformLeft [j|{p:[0],li:[]}|] [j|{p:[1],lm:0}|])
+      shouldBe' [j|{p:[2],li:"x"}|] (transformLeft [j|{p:[2],li:"x"}|] [j|{p:[0],lm:1}|])
 
     it "moves target index on ld/li" $ do
       shouldBe' [j|{p:[0],lm:1}|] (transformLeft [j|{p:[0], lm: 2}|] [j|{p:[1], ld:"x"}|])
