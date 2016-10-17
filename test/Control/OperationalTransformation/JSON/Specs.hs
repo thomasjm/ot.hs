@@ -277,8 +277,8 @@ specs = do
       shouldBe' [j|{p:[1],ld:{},li:"brillig"}|] (transformLeft [j|{p:[0],ld:{},li:"brillig"}|] [j|{p:[0],li:36}|])
 
     it "replacement vs. replacement" $ do
-      shouldBe' [j|{}|] (transformRight [j|{p:[0],ld:null,li:[]}|] [j|{p:[0],ld:null,li:0}|])
-      shouldBe' [j|{p:[0],ld:[],li:0}|] (transformLeft [j|{p:[0],ld:null,li:0}|] [j|{p:[0],ld:null,li:[]}|])
+      shouldBe' [j|{}|]                 (transformRight [j|{p:[0],ld:null,li:[]}|] [j|{p:[0],ld:null,li:0}|])
+      shouldBe' [j|{p:[0],ld:[],li:0}|] (transformLeft  [j|{p:[0],ld:null,li:0}|] [j|{p:[0],ld:null,li:[]}|])
 
     it "composes replace with delete of replaced element results in insert" $ do
       shouldBe' [j|{p:[2],ld:[]}|] (compose [j|{p:[2],ld:[],li:null}|] [j|{p:[2],ld:null}|])

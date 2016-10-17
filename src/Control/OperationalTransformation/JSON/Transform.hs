@@ -117,9 +117,8 @@ transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 whe
   path' = (init beginning) ++ [prop'] ++ rest
 
 -- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
-transformRight op1@(ListReplace path1 index1 _ _) (getPath -> path2) | (getFullPath op1) `isPrefixOf` path2
-  = Right Identity
-
+transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
+  | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
 
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 
@@ -158,6 +157,10 @@ transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
 -- On simultaneous inserts, the left insert wins
 transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) |
   path1 == path2 && key1 == key2 = Right (ObjectReplace path1 key1 value2 value1, Identity)
+
+-- On simultaneous inserts, the left insert wins
+transformDouble op1@(ListReplace path1 key1 old1 new1) op2@(ListReplace path2 key2 old2 new2)
+  | (path1 == path2) && (key1 == key2) = Right (ListReplace path1 key1 new2 new1, Identity)
 
 transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
   sd1 == sd2 = Right (Identity, Identity)
