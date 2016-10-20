@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE TupleSections, ViewPatterns, MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings, PatternGuards, QuasiQuotes #-}
 
@@ -21,23 +22,29 @@ import qualified Data.Aeson as A
 invertOperation = undefined
 
 instance OTOperation JSONOperation where
-  -- Handle identities up front
-  transform Identity op = Right (Identity, op)
-  transform op Identity = Right (op, Identity)
+  transform (JSONOperation [op1]) (JSONOperation [op2]) = case transform' op1 op2 of
+    Left s -> Left s
+    Right (op1, op2) -> Right (JSONOperation [op1], JSONOperation [op2])
+  transform _ _ = error "Don't know how to transform non-singleton lists"
 
-  -- Operations that both affect each other
-  transform x y | x `affects` y && y `affects` x = transformDouble x y
+-- Handle identities up front
+transform' Identity op = Right (Identity, op)
+transform' op Identity = Right (op, Identity)
 
-  -- Operations where the left affects the right
-  -- since `x` is unaffected by `y`, `x'` is just `x`
-  transform x y | x `affects` y = (x, ) <$> (transformRight x y)
+-- Operations that both affect each other
+transform' x y | x `affects` y && y `affects` x = transformDouble x y
 
-  -- Operations where the right affects the left
-  -- since `y` is unaffected by `x`, `y'` is just `y`
-  transform x y | y `affects` x = (, y) <$> (transformRight y x)
+-- Operations where the left affects the right
+-- since `x` is unaffected by `y`, `x'` is just `x`
+transform' x y | x `affects` y = (x, ) <$> (transformRight x y)
 
-  -- Operations that don't affect each other
-  transform x y = Right (x, y)
+-- Operations where the right affects the left
+-- since `y` is unaffected by `x`, `y'` is just `y`
+transform' x y | y `affects` x = (, y) <$> (transformRight y x)
+
+-- Operations that don't affect each other
+transform' x y = Right (x, y)
+
 
 -- Not sure if it's possible to write a total compose function...
 -- But the tests have some compose in them
@@ -45,4 +52,5 @@ instance OTComposableOperation JSONOperation where
   compose = C.compose
 
 instance OTSystem A.Value JSONOperation where
-  apply = AP.apply
+  apply (JSONOperation [op]) val = AP.apply op val
+  apply _ val = error "Don't know how to apply non-singleton ops"

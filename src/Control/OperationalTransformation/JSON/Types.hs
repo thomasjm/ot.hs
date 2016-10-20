@@ -1,21 +1,29 @@
+{-# LANGUAGE TemplateHaskell, DeriveAnyClass #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings, QuasiQuotes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.OperationalTransformation.JSON.Types
 ( JSONOperation(..)
+  , JSONOp(..)
   , Path
   , PathSegment(..)
 ) where
 
-import Control.Monad
+import Control.DeepSeq
 import Control.OperationalTransformation.Text0
 import Data.Aeson
 import qualified Data.Aeson as A
+import Data.Aeson.TH as A
 import qualified Data.Aeson.Types as A
+import Data.Data
 import qualified Data.HashMap.Strict as HM
-import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import GHC.Generics (Generic)
+import Instances.TH.Lift ()
+import Language.Haskell.TH.Lift
 
 
 -- * PathSegment and Path
@@ -23,7 +31,9 @@ import qualified Data.Vector as V
 data PathSegment
   = Prop T.Text
   | Pos Int
-  deriving (Show, Eq)
+  deriving (Show, Eq, Typeable, Data, Generic, NFData)
+
+$(deriveLift ''PathSegment)
 
 type Path = [PathSegment]
 
@@ -47,13 +57,11 @@ instance ToJSON PathSegment where
 --   return $ [Retain p, Delete (T.length d)]
 -- parseAction x = error [i|Failed to parse: #{x}|]
 
-
-
--- * JSONOperation
+-- * JSONOp
 
 -- Based on the "Summary of operations" at https://github.com/ottypes/json0
 -- See also https://github.com/josephg/ShareJS/blob/master/lib/types/json-api.js
-data JSONOperation
+data JSONOp
 
   = Identity
 
@@ -97,9 +105,11 @@ data JSONOperation
   -- deletes the string s at offset offset from the string at [path] (uses subtypes internally)
   | StringDelete Path Int T.Text
 
-  deriving (Eq, Show)
+  deriving (Eq, Show, Typeable, Data, Generic, NFData)
 
-instance ToJSON JSONOperation where
+$(deriveLift ''JSONOp)
+
+instance ToJSON JSONOp where
   toJSON Identity = object []
   toJSON (Add path operand) = object [("p", toJSON path), ("na", A.Number $ fromIntegral operand)]
   toJSON (ListInsert path i value)    = object [("p", toJSON (path ++ [Pos i])), ("li", value)]
@@ -118,7 +128,7 @@ instance ToJSON JSONOperation where
   toJSON (StringInsert path i s) = object [("p", toJSON (path ++ [Pos i])), ("si", A.String s)]
   toJSON (StringDelete path i s) = object [("p", toJSON (path ++ [Pos i])), ("sd", A.String s)]
 
-instance FromJSON JSONOperation where
+instance FromJSON JSONOp where
   parseJSON (A.Object v) | HM.null v = return Identity
 
   -- Numbers
@@ -151,7 +161,6 @@ instance FromJSON JSONOperation where
                              return $ ObjectReplace path prop before after
   parseJSON (A.Object v) | "oi" `elem` (HM.keys v) = do
                              (path, prop) <- parsePathAndProp v
-                             when (isNothing prop) $ fail "Missing key on object insert"
                              obj <- v .: "oi"
                              return $ ObjectInsert path prop obj
   parseJSON (A.Object v) | "od" `elem` (HM.keys v) = do
@@ -202,3 +211,11 @@ parsePathAndProp v = do
       let path = init pathAndProp
       let (Prop prop) = last pathAndProp
       return (path, Just prop)
+
+
+-- * JSONOperation
+
+newtype JSONOperation = JSONOperation [JSONOp] deriving (Show, Eq, Typeable, Data, Generic, NFData)
+
+$(deriveJSON A.defaultOptions ''JSONOperation)
+$(deriveLift ''JSONOperation)

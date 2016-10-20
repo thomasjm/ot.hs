@@ -19,7 +19,7 @@ getIndexInList listPath op | (length listPath) < (length path) = unPos (path !! 
 getIndexInList x y = error [i|Failed to getIndexInList (this shouldn't happen): #{show x}, #{show y}|]
 
 -- Define x `affects` y if operation x affects operation y
-affects :: JSONOperation -> JSONOperation -> Bool
+affects :: JSONOp -> JSONOp -> Bool
 
 -- If an operation operates on the same index as a list insert, it does *not* affect the list insert
 -- The exception to this is another list insert, in which case we must break ties
@@ -53,8 +53,10 @@ affects (ListReplace listPath listIndex old new) op | path <- getPath op
 
 -- ListMove/ListMove (operating on same list)
 affects (ListMove listPath1 listIndex11 listIndex12) (ListMove listPath2 listIndex21 listIndex22)
-  | listPath1 == listPath2 = (inRange listIndex21 || inRange listIndex22)
-  where inRange x = (x >= (min listIndex11 listIndex12)) && (x <= (max listIndex11 listIndex12))
+  | listPath1 == listPath2 = True
+  -- (inRange listIndex21 || inRange listIndex22)
+  -- where inRange x = (x >= (min listIndex11 listIndex12)) && (x <= (max listIndex11 listIndex12))
+
 -- ListMove/Anything
 affects (ListMove listPath listIndex1 listIndex2) op | listPath `isPrefixOf` (getFullPath op)
                                                      , index <- getIndexInList listPath op

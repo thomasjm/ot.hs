@@ -7,7 +7,7 @@ module Control.OperationalTransformation.JSON.Transform where
 import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON.Affects
 import qualified Control.OperationalTransformation.JSON.Apply as Ap
-import Control.OperationalTransformation.JSON.QuasiQuote (j)
+import Control.OperationalTransformation.JSON.QuasiQuote
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Control.OperationalTransformation.Text0
@@ -18,8 +18,8 @@ import qualified Data.Text as T
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = parseOp [j|{p:[0],ld:"x",li:"y"}|]
-op2 = parseOp [j|{p:[0],ld:"x"}|]
+op1 = [j|{"p":[0],"ld":"x","li":"y"}|]
+op2 = [j|{"p":[0],"ld":"x"}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ foo = affects -- Just to avoid warning that the import is unused
 
 -- ListInsert: bump up the index on the right operation
 -- TODO: using init here is hideous, find another way
-transformRight :: JSONOperation -> JSONOperation -> Either String JSONOperation
+transformRight :: JSONOp -> JSONOp -> Either String JSONOp
 
 -- ListDelete/ListMove
 transformRight op1@(ListDelete path1 index1 _) op2@(ListMove path2 index21 index22) =
@@ -69,8 +69,8 @@ transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2
 -- ListMove/Anything
 transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
   | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
-transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
   | i > listIndex1 && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
+  | otherwise = Right op2
 
 -- ListDelete/ListReplace: a delete affecting a replace turns into an insert. TODO: what if the delete is inside the replace?
 transformRight op1@(ListDelete path1 index1 value1) op2@(ListReplace path2 index2 old new)
@@ -127,7 +127,7 @@ transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 ----------------------------------------------------------------------------------
 
 -- |In transformDouble, both operations affect the other
-transformDouble :: JSONOperation -> JSONOperation -> Either String (JSONOperation, JSONOperation)
+transformDouble :: JSONOp -> JSONOp -> Either String (JSONOp, JSONOp)
 transformDouble op1@(ListInsert path1 i1 value1) op2@(ListInsert path2 i2 value2)
   | (path2 == path1) && (i1 > i2) = error "Problem with transformDouble ListInsert/ListInsert" -- TODO rev <$> transform op2 op1 -- WLOG
   | (path2 == path1) && (i1 <= i2) = Right (op1, ListInsert path2 (succ i2) value2)
@@ -154,16 +154,30 @@ transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
   | key1 == key1 = Right (Identity, Identity) -- inconsistent state, so we behave forgivingly
   | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
 
--- On simultaneous inserts, the left insert wins
+-- On simultaneous inserts, the left one wins
 transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) |
   path1 == path2 && key1 == key2 = Right (ObjectReplace path1 key1 value2 value1, Identity)
 
--- On simultaneous inserts, the left insert wins
+-- On simultaneous list replaces, the left one wins
 transformDouble op1@(ListReplace path1 key1 old1 new1) op2@(ListReplace path2 key2 old2 new2)
   | (path1 == path2) && (key1 == key2) = Right (ListReplace path1 key1 new2 new1, Identity)
 
 transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
   sd1 == sd2 = Right (Identity, Identity)
+
+-- ListMove/ListMove
+-- transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2 && otherFrom == otherTo = Right (_, op2)
+-- transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2
+--   = Right $ ListMove path2 newIndex1 newIndex2
+--   where
+--     newIndex1 = if | (listIndex11 <= listIndex12) && (listIndex11 < listIndex21) && (listIndex21 < listIndex12) -> listIndex21 - 1
+--                    | (listIndex12 <= listIndex11) && (listIndex12 <= listIndex21) && (listIndex21 < listIndex11) -> listIndex21 + 1
+--                    | otherwise -> listIndex21
+
+--     newIndex2 = if | (listIndex11 <= listIndex12) && (listIndex11 < listIndex22) && (listIndex22 < listIndex12) -> listIndex22 - 1
+--                    | (listIndex12 <= listIndex11) && (listIndex12 <= listIndex22) && (listIndex22 < listIndex11) -> listIndex22 + 1
+--                    | otherwise -> listIndex22
+  -- Something gets moved before the destination
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
 -- for the cases where the transformations don't depend on each other

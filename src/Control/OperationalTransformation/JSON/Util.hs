@@ -6,6 +6,7 @@ import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
 import Data.String.Interpolate.IsString
 
+
 inc :: PathSegment -> PathSegment
 inc = add 1
 
@@ -25,18 +26,18 @@ unProp (Prop x) = x
 unProp _ = error "unProp called on pos"
 
 -- |Force parse an operation. Just for REPL testing.
-parseOp :: A.Value -> JSONOperation
+parseOp :: A.Value -> JSONOp
 parseOp x = case fromJSON x of
   Success op -> op
   Error err -> error err
 
 
--- |A generic way to set/get the path from a JSONOperation
+-- |A generic way to set/get the path from a JSONOp
 -- TODO: replace this with lenses or something
 class HasPath a where
   getPath :: a -> Path
   setPath :: Path -> a -> a
-instance HasPath JSONOperation where
+instance HasPath JSONOp where
   getPath (StringInsert path _ _) = path
   getPath (StringDelete path _ _) = path
 
@@ -79,7 +80,7 @@ class HasFullPath a where
   getFullPath :: a -> Path
   setFullPath :: Path -> a -> a
 
-instance HasFullPath JSONOperation where
+instance HasFullPath JSONOp where
   getFullPath (StringInsert path _ _) = path
   getFullPath (StringDelete path _ _) = path
 
@@ -143,3 +144,22 @@ getPrimitive obj@(StringInsert {}) = Just obj
 getPrimitive obj@(StringDelete {}) = Just obj
 getPrimitive obj@(ApplySubtypeOperation {}) = Just obj
 getPrimitive _ = Nothing
+
+between x (a, b) = (a < x) && (x < b)
+
+
+-- * Testing stuff
+
+-- for ghci
+d :: A.Value -> JSONOp
+d jsonValue = op
+  where
+    Success op = fromJSON jsonValue
+
+-- Just for REPL testing
+-- transform' :: A.Value -> A.Value -> (JSONOp, JSONOp)
+-- transform' val1 val2 = (op1', op2')
+--   where
+--     Success (op1 :: JSONOp) = fromJSON val1
+--     Success (op2 :: JSONOp) = fromJSON val2
+--     Right (JSONOperation [op1'], JSONOperation [op2']) = C.transform (JSONOperation [op1]) (JSONOperation [op2])

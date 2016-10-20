@@ -1,3 +1,8 @@
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -12,20 +17,27 @@ module Control.OperationalTransformation.Text0
   ) where
 
 
+import Control.DeepSeq
 import Control.OperationalTransformation
-import Control.OperationalTransformation.JSON.QuasiQuote (j)
 import Data.Aeson as A
 import Data.Convertible
+import Data.Data
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
 import Data.Monoid
 import qualified Data.Text as T
+import GHC.Generics (Generic)
+import Instances.TH.Lift ()
+import Language.Haskell.TH.Lift
 
 data SingleText0Operation = TextInsert Int T.Text
-                          | TextDelete Int T.Text deriving (Eq, Show)
+                          | TextDelete Int T.Text deriving (Eq, Show, Typeable, Data, Generic, NFData)
 
+$(deriveLift ''SingleText0Operation)
 
-newtype Text0Operation = T0 [SingleText0Operation] deriving (Eq, Show)
+newtype Text0Operation = T0 [SingleText0Operation] deriving (Eq, Show, Typeable, Data, Generic, NFData)
+
+$(deriveLift ''Text0Operation)
 
 invertOperation = undefined
 
@@ -134,6 +146,3 @@ parseOp :: A.Value -> Text0Operation
 parseOp x = case fromJSON x of
   Success op -> T0 [op]
   Error err -> error err
-
-op1 = parseOp [j|{p:5, d:"a"}|]
-op2 = parseOp [j|{p:5, d:"a"}|]

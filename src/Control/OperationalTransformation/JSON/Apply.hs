@@ -4,13 +4,12 @@ module Control.OperationalTransformation.JSON.Apply where
 
 import Control.Lens hiding (Identity)
 import Control.OperationalTransformation as OT
-import Control.OperationalTransformation.JSON.QuasiQuote (j)
--- import Control.OperationalTransformation.JSON.Transform ()
+import Control.OperationalTransformation.JSON.QuasiQuote (v)
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson as A
-import Data.String.Interpolate.IsString
 import Data.Aeson.Lens
 import Data.Monoid
+import Data.String.Interpolate.IsString
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
@@ -49,7 +48,7 @@ stringDelete :: T.Text -> Int -> T.Text -> T.Text
 stringDelete haystack pos needle = beginning <> (T.drop (T.length needle) rest)
   where (beginning, rest) = T.splitAt pos haystack
 
-apply :: JSONOperation -> A.Value -> Either String A.Value
+apply :: JSONOp -> A.Value -> Either String A.Value
 apply Identity input = Right input
 
 apply (Add path n) input = case input ^? (numberAtPath path) of
@@ -106,7 +105,7 @@ apply (StringDelete path pos s) input = case input ^? (stringAtPath path) of
 
 
 -- For playing in ghci
-test_obj = [j|{
+test_obj = [v|{
   key1: "value1",
   key2: 42,
   key3: ["a", "b", "c"]
