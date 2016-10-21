@@ -6,7 +6,6 @@ module Control.OperationalTransformation.JSON.Gen
   ( genOperation
   ) where
 
-import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.Properties (ArbitraryFor (..))
 import qualified Data.Aeson as A
@@ -18,8 +17,8 @@ import qualified Data.Vector as V
 import Safe
 import Test.QuickCheck hiding (Result)
 
-instance ArbitraryFor A.Value JSONOperation where
-  arbitraryFor = genOperation
+instance ArbitraryFor A.Value JSONOp where
+  arbitraryFor = genOp
 
 newtype Identifier = Identifier { unIdentifier :: T.Text }
 
@@ -29,15 +28,20 @@ instance Arbitrary Identifier where
 instance Arbitrary A.Value where
   arbitrary = oneof [object, array, string, number, bool, return A.Null]
 
-instance Arbitrary JSONOperation where
-  arbitrary = arbitrary >>= genOperation
+instance Arbitrary JSONOp where
+  arbitrary = arbitrary >>= genOp
 
 
 genOperation :: A.Value -> Gen JSONOperation
-genOperation = flip genOperation' []
+genOperation val = do
+  op <- genOp val
+  return $ JSONOperation [op]
 
-genOperation' :: A.Value -> Path -> Gen JSONOperation
-genOperation' (A.Object m) path = oneof $ [
+genOp :: A.Value -> Gen JSONOp
+genOp = flip genOp' []
+
+genOp' :: A.Value -> Path -> Gen JSONOp
+genOp' (A.Object m) path = oneof $ [
   return Identity,
 
   -- Insert a new key into the object
@@ -48,7 +52,7 @@ genOperation' (A.Object m) path = oneof $ [
   -- Operations if the object is non-empty
   ++ (if (not $ HM.null m) then [
          -- Recurse
-         (elements $ HM.toList m) >>= \(k, v) -> genOperation' v (path ++ [Prop k]),
+         (elements $ HM.toList m) >>= \(k, v) -> genOp' v (path ++ [Prop k]),
 
          -- Delete a key from the object
          (elements $ HM.toList m) >>= \(k, v) -> return $ ObjectDelete path (Just k) v,
@@ -56,7 +60,7 @@ genOperation' (A.Object m) path = oneof $ [
          -- Replace a key from the object
          (elements $ HM.toList m) >>= \(k, v) -> ObjectReplace path (Just k) v <$> arbitrary
          ] else [])
-genOperation' (A.Array v) path = oneof $ [
+genOp' (A.Array v) path = oneof $ [
   return Identity,
 
   -- Insert an item
@@ -65,7 +69,7 @@ genOperation' (A.Array v) path = oneof $ [
   -- Operations if the list is non-empty
   ++ (if (not $ V.null v) then [
          -- Recurse
-         (elements [0 .. ((V.length v) - 1)]) >>= \i -> genOperation' (A.Array v) (path ++ [Pos i]),
+         (elements [0 .. ((V.length v) - 1)]) >>= \i -> genOp' (A.Array v) (path ++ [Pos i]),
 
          -- Delete an item from the list
          (elements [0 .. ((V.length v) - 1)]) >>= \i -> return $ ListDelete path i (v V.! i),
@@ -78,7 +82,7 @@ genOperation' (A.Array v) path = oneof $ [
            (elements [0 .. ((V.length v) - 1)]) >>= \i2 ->
              return $ ListMove path i1 i2
          ] else [])
-genOperation' (A.String s) path = oneof [
+genOp' (A.String s) path = oneof [
   -- Insert a string
   (elements [0 .. (T.length s)]) >>= \i -> StringInsert path i <$> randomString,
 
@@ -87,13 +91,13 @@ genOperation' (A.String s) path = oneof [
     (elements [i1 .. (T.length s)]) >>= \i2 ->
       return $ StringDelete path i1 (T.take (i2 - i1) $ T.drop i1 s)
   ]
-genOperation' (A.Number n) path = Add path <$> arbitrary
+genOp' (A.Number n) path = Add path <$> arbitrary
 -- Booleans get flipped
-genOperation' (A.Bool b) path@(lastMay -> Just (Pos x)) = return $ ListReplace (init path) x (A.Bool b) (A.Bool $ not b)
-genOperation' (A.Bool b) path@(lastMay -> Just (Prop x)) = return $ ObjectReplace (init path) (Just x) (A.Bool b) (A.Bool $ not b)
-genOperation' (A.Bool b) path@(lastMay -> Nothing) = return $ ObjectReplace (init path) Nothing (A.Bool b) (A.Bool $ not b)
+genOp' (A.Bool b) path@(lastMay -> Just (Pos x)) = return $ ListReplace (init path) x (A.Bool b) (A.Bool $ not b)
+genOp' (A.Bool b) path@(lastMay -> Just (Prop x)) = return $ ObjectReplace (init path) (Just x) (A.Bool b) (A.Bool $ not b)
+genOp' (A.Bool b) path@(lastMay -> Nothing) = return $ ObjectReplace (init path) Nothing (A.Bool b) (A.Bool $ not b)
 -- Nulls just get left alone
-genOperation' (A.Null) path = return Identity
+genOp' (A.Null) path = return Identity
 --TODO: add tests of subtype operations?
 
 

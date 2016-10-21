@@ -17,6 +17,7 @@ import qualified Control.OperationalTransformation.JSON.Compose as C
 import Control.OperationalTransformation.JSON.Transform (transformDouble, transformRight)
 import Control.OperationalTransformation.JSON.Types
 import qualified Data.Aeson as A
+import Data.String.Interpolate.IsString
 
 
 invertOperation = undefined
@@ -25,7 +26,7 @@ instance OTOperation JSONOperation where
   transform (JSONOperation [op1]) (JSONOperation [op2]) = case transform' op1 op2 of
     Left s -> Left s
     Right (op1, op2) -> Right (JSONOperation [op1], JSONOperation [op2])
-  transform _ _ = error "Don't know how to transform non-singleton lists"
+  transform l1 l2 = error [i|Don't know how to transform non-singleton lists: #{l2} and #{l2}|]
 
 -- Handle identities up front
 transform' Identity op = Right (Identity, op)
@@ -46,8 +47,6 @@ transform' x y | y `affects` x = (, y) <$> (transformRight y x)
 transform' x y = Right (x, y)
 
 
--- Not sure if it's possible to write a total compose function...
--- But the tests have some compose in them
 instance OTComposableOperation JSONOperation where
   compose = C.compose
 

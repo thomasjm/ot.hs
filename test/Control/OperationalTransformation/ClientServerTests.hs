@@ -6,6 +6,7 @@ module Control.OperationalTransformation.ClientServerTests
 
 import Control.OperationalTransformation
 import Control.OperationalTransformation.Client
+import qualified Control.OperationalTransformation.JSON ()
 import qualified Control.OperationalTransformation.JSON.Gen as JSONGen
 import Control.OperationalTransformation.Server
 import qualified Control.OperationalTransformation.Text.Gen as TextGen
