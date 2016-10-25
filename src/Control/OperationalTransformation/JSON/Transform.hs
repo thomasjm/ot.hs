@@ -166,19 +166,43 @@ transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
   sd1 == sd2 = Right (Identity, Identity)
 
 -- ListMove/ListMove
--- transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2 && otherFrom == otherTo = Right (_, op2)
--- transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2
---   = Right $ ListMove path2 newIndex1 newIndex2
---   where
---     newIndex1 = if | (listIndex11 <= listIndex12) && (listIndex11 < listIndex21) && (listIndex21 < listIndex12) -> listIndex21 - 1
---                    | (listIndex12 <= listIndex11) && (listIndex12 <= listIndex21) && (listIndex21 < listIndex11) -> listIndex21 + 1
---                    | otherwise -> listIndex21
-
---     newIndex2 = if | (listIndex11 <= listIndex12) && (listIndex11 < listIndex22) && (listIndex22 < listIndex12) -> listIndex22 - 1
---                    | (listIndex12 <= listIndex11) && (listIndex12 <= listIndex22) && (listIndex22 < listIndex11) -> listIndex22 + 1
---                    | otherwise -> listIndex22
-  -- Something gets moved before the destination
+transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2
+  = Right (transformListMove LeftSide op2 op1, transformListMove RightSide op1 op2)
 
 -- The right default behavior for transformDouble is to transform the two sides independently,
 -- for the cases where the transformations don't depend on each other
 transformDouble x y = (, ) <$> transformRight y x <*> transformRight x y
+
+
+data Side = LeftSide | RightSide deriving (Show, Eq)
+
+-- ListMove/ListMove, where we're transforming the right one
+-- Made by directly copying the logic in json0.js
+transformListMove side op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | otherFrom == otherTo = op2
+
+-- Where did my thing go? Someone already moved it and we're the right: tiebreak to a no-op
+transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from to) | ((from == otherFrom) && (side == RightSide)) = Identity
+
+-- Where did my thing go? Someone already moved it and we're the left: tiebreak to a valid op
+transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from to) | ((from == otherFrom) && (side == LeftSide) && (from == to)) = ListMove path2 otherTo otherTo -- Ugh special case
+transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from to) | ((from == otherFrom) && (side == LeftSide)) = ListMove path2 otherTo to
+
+-- Mimic the imperative JS code from json0.js exactly
+-- (This was too tricky to do otherwise)
+-- TODO: use state monad or something to make this less error-prone
+transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from to) = ListMove path2 newFrom newTo where
+  newFrom' = if (from > otherFrom) then from - 1 else from
+  newFrom'' = if (from > otherTo) then newFrom' + 1 else newFrom'
+  newFrom''' = if ((from == otherTo) && (otherFrom > otherTo)) then newFrom'' + 1 else newFrom''
+  newFrom = newFrom'''
+
+  newTo1 = if ((from == otherTo) && (otherFrom > otherTo) && (from == to)) then to + 1 else to
+  newTo2 = if (to > otherFrom) then newTo1 - 1 else newTo1
+  newTo3 = if ((to == otherFrom) && (to > from)) then newTo2 - 1 else newTo2
+  newTo4 = if (to > otherTo) then newTo3 + 1 else newTo3
+  newTo5 = if ((to == otherTo) && ((otherTo > otherFrom && to > from) || (otherTo < otherFrom && to < from)) && (side == RightSide)) then newTo4 + 1 else newTo4
+  newTo6 = if ((to == otherTo) && (not ((otherTo > otherFrom && to > from) || (otherTo < otherFrom && to < from))) && (to > from)) then newTo5 + 1 else newTo5
+  newTo7 = if ((to == otherTo) && (not ((otherTo > otherFrom && to > from) || (otherTo < otherFrom && to < from))) && (not (to > from)) && (to == otherFrom)) then newTo6 - 1 else newTo6
+  newTo = newTo7
+
+transformListMove side op1 op2 = error [i|Invalid arguments to transformListMove: #{side}, #{op1}, #{op2}|]
