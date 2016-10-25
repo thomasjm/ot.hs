@@ -420,21 +420,21 @@ specs = do
     it "replacement vs. deletion" $ do
       shouldBe' [j|{"p":[], "oi":{}}|] (transformRight [j|{"p":[], "od":[""], "oi":{}}|] [j|{"p":[], "od":[""]}|])
 
-    -- it "replacement vs. replacement" $ do
-    --   shouldBe' [] (transformRight [j|{"p":[], "od":[""]}|,{"p":[],"oi":{}}|] [j|{"p":[], "od":[""]}|,{"p":[],"oi":null}])|]
-    --   shouldBe' [j|{"p":[], "od":null,"oi":{}}|] (transformLeft [j|{"p":[], "od":[""]}|,{"p":[],"oi":{}}] [j|{"p":[], "od":[""]}|,{"p":[],"oi":null}])
-    --   shouldBe' [] (transformRight [j|{"p":[], "od":[""],"oi":{}}|] [j|{"p":[], "od":[""],"oi":null}|])
-    --   shouldBe' [j|{"p":[], "od":null,"oi":{}}|] (transformLeft [j|{"p":[], "od":[""],"oi":{}}|] [j|{"p":[], "od":[""],"oi":null}|])
+    it "replacement vs. replacement" $ do
+      shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
+      shouldBe' [l|[{"p":[], "od":null,"oi":{}}]|] (transformLeft' [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
+      shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":{}}]|] [l|[{"p":[], "od":[""],"oi":null}]|])
+      shouldBe' [j|{"p":[], "od":null,"oi":{}}|] (transformLeft [j|{"p":[], "od":[""],"oi":{}}|] [j|{"p":[], "od":[""],"oi":null}|])
 
-    --   -- test diamond property
-    --   rightOps = [{"p":[],"od":null,"oi":{}}]
-    --   leftOps = [{"p":[],"od":null,"oi":""}]
-    --   rightHas = apply(null, rightOps)
-    --   leftHas = apply(null, leftOps)
+      -- -- test diamond property
+      -- rightOps = [{"p":[],"od":null,"oi":{}}]
+      -- leftOps = [{"p":[],"od":null,"oi":""}]
+      -- rightHas = apply(null, rightOps)
+      -- leftHas = apply(null, leftOps)
 
-    --   let [left_, right_] = transformX type, leftOps, rightOps
-    --   shouldBe' leftHas, apply rightHas, left_
-    --   shouldBe' leftHas, apply leftHas, right_
+      -- let [left_, right_] = transformX type, leftOps, rightOps
+      -- shouldBe' leftHas, apply rightHas, left_
+      -- shouldBe' leftHas, apply leftHas, right_
 
 
     it "An attempt to re-delete a key becomes a no-op" $ do
