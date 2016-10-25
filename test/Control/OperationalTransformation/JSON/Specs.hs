@@ -38,6 +38,11 @@ transformRight :: JSONOp -> JSONOp -> JSONOp
 transformRight a b = a'
   where (_, a') = transform b a
 
+compose' :: JSONOperation -> JSONOperation -> JSONOperation
+compose' op1 op2 = case C.compose op1 op2 of
+  Left err -> error err
+  Right operation -> operation
+
 transform' :: JSONOperation -> JSONOperation -> (JSONOperation, JSONOperation)
 transform' op1 op2 = case C.transform op1 op2 of
   Left err -> error err
@@ -154,10 +159,10 @@ specs = do
         shouldBe' [v|["a", "b", "c"]|] (apply [v|["b", "a", "c"]|] [j|{"p":[1], "lm":0}|])
         shouldBe' [v|["a", "b", "c"]|] (apply [v|["b", "a", "c"]|] [j|{"p":[0], "lm":1}|])
 
-      -- it "null moves compose to nops" $ do
-      --   shouldBe' [], type.compose [], [{"p":[3], "lm":3}]
-      --   shouldBe' [], type.compose [], [{"p":[0,3], "lm":3}]
-      --   shouldBe' [], type.compose [], [{"p":["x","y",0], "lm":0}]
+      it "null moves compose to nops" $ do
+        shouldBe' [l|[]|] (compose' [l|[]|] [l|[{"p":[3], "lm":3}]|])
+        shouldBe' [l|[]|] (compose' [l|[]|] [l|[{"p":[0,3], "lm":3}]|])
+        shouldBe' [l|[]|] (compose' [l|[]|] [l|[{"p":["x","y",0], "lm":0}]|])
 
   describe "transform()" $ do
     it "bumps paths when list elements are inserted or removed" $ do

@@ -13,6 +13,10 @@ import qualified Data.Text as T
 
 compose :: JSONOperation -> JSONOperation -> Either String JSONOperation
 
+-- Null operations compose to no-ops
+compose (JSONOperation []) _ = Right $ JSONOperation []
+compose _ (JSONOperation []) = Right $ JSONOperation []
+
 compose (JSONOperation [op1]) (JSONOperation [op2]) = case compose' op1 op2 of
   Left err -> Right $ JSONOperation [op1, op2]
   Right ops -> Right $ JSONOperation ops
