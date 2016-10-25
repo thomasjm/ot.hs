@@ -49,8 +49,8 @@ transformRight op1@(ListDelete path1 index1 _) op2@(ListMove path2 index21 index
 -- ListInsert/ListMove
 transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index22) =
   if -- Insert in the middle of the range causes the top index to go up
-     | path1 == path2 && index1 > bottom && index1 < top && index22 > index21 -> Right $ ListMove path2 index21 (index22 + 1)
-     | path1 == path2 && index1 > bottom && index1 < top && index22 < index21 -> Right $ ListMove path2 (index21 + 1) index22
+     | path1 == path2 && bottom < index1 && index1 <= top && index22 > index21 -> Right $ ListMove path2 index21 (index22 + 1)
+     | path1 == path2 && bottom < index1 && index1 <= top && index22 < index21 -> Right $ ListMove path2 (index21 + 1) index22
      -- Insert before the range causes both indices to go up
      | path1 == path2 && index1 <= bottom -> Right $ ListMove path2 (index21 + 1) (index22 + 1)
      -- Otherwise, no change
@@ -62,9 +62,12 @@ transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index
 transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _)
   -- on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
   | path1 == path2 && index11 == index2 && index12 < index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
+  -- in between
+  | path1 == path2 && index11 < index2 && index2 <= index12 = Right $ replaceIndex op2 (length path1) (index2 - 1)
+  | path1 == path2 && index12 < index2 && index2 <= index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
   -- If the ListInsert is at or before the smaller index of the ListMove, it's not affected. TODO: cover this in `affects`
   | path1 == path2 && index2 <= (min index11 index12) = Right op2
-  -- If the ListInsert is at or after the larger index of the LiveMove, it's not affected
+  -- If the ListInsert is at or after the larger index of the ListMove, it's not affected
   | path1 == path2 && index2 >= (max index11 index12) = Right op2
 -- ListMove/Anything
 transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
@@ -165,7 +168,7 @@ transformDouble op1@(ListReplace path1 key1 old1 new1) op2@(ListReplace path2 ke
 transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
   sd1 == sd2 = Right (Identity, Identity)
 
--- ListMove/ListMove
+-- ListMove/ListMove: fall back to special logic
 transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2
   = Right (transformListMove LeftSide op2 op1, transformListMove RightSide op1 op2)
 
@@ -173,6 +176,16 @@ transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from 
 -- for the cases where the transformations don't depend on each other
 transformDouble x y = (, ) <$> transformRight y x <*> transformRight x y
 
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------
 
 data Side = LeftSide | RightSide deriving (Show, Eq)
 

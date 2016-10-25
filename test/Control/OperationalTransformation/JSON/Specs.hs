@@ -38,6 +38,20 @@ transformRight :: JSONOp -> JSONOp -> JSONOp
 transformRight a b = a'
   where (_, a') = transform b a
 
+transform' :: JSONOperation -> JSONOperation -> (JSONOperation, JSONOperation)
+transform' op1 op2 = case C.transform op1 op2 of
+  Left err -> error err
+  Right x -> x
+
+transformLeft' :: JSONOperation -> JSONOperation -> JSONOperation
+transformLeft' a b = a'
+  where (a', _) = transform' a b
+
+transformRight' :: JSONOperation -> JSONOperation -> JSONOperation
+transformRight' a b = a'
+  where (_, a') = transform' b a
+
+
 shouldBe' :: (Eq a, Show a) => a -> a -> Expectation
 shouldBe' = flip shouldBe
 
@@ -93,9 +107,8 @@ specs = do
       shouldBe' [v|{x:"abc"}|] (apply [v|{x:"a"}|] [j|{"p":["x", 1], "si":"bc"}|])
 
   describe "transform()" $ do
-    -- TODO: how to deal with lists of ops?
-    -- it "splits deletes" $ do
-    --   shouldBe' [[j|{"p":[0], "sd":"a"}|], [j|{"p":[1], "sd":"b"}|]] (transformLeft [j|{"p":[0], "sd":"ab"}|] [j|{"p":[1], "si":"x"}|])
+    it "splits deletes" $ do
+      shouldBe' [l|[{"p":[0], "sd":"a"}, {"p":[1], "sd":"b"}]|] (transformLeft' [l|[{"p":[0], "sd":"ab"}]|] [l|[{"p":[1], "si":"x"}]|])
 
     it "cancels out other deletes" $ do
       shouldBe' [j|{}|] (transformLeft [j|{"p":["k", 5], "sd":"a"}|] [j|{"p":["k", 5], "sd":"a"}|])
