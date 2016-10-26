@@ -141,11 +141,9 @@ transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2
   | op1 /= op2 = error "Fatal: operations do not both affect each other"
   | otherwise = Right (Identity, Identity)
 
--- we know both operations affect each other, and our operations are both
--- `ObjectDelete`s, so we know `path1 == path2`
+-- ObjectDelete/ObjectDelete: we know `path1 == path2`
 transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
-  | op1 == op2 = Right (Identity, Identity)
-  | key1 == key1 = Right (Identity, Identity) -- inconsistent state, so we behave forgivingly
+  | key1 == key1 = Right (Identity, Identity)
   | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
 
 -- On simultaneous inserts, the left one wins
@@ -193,7 +191,7 @@ transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from t
 
 -- Mimic the imperative JS code from json0.js exactly
 -- (This was too tricky to do otherwise)
--- TODO: use state monad or something to make this less error-prone
+-- TODO: use ST monad or something to make this less error-prone
 transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from to) = ListMove path2 newFrom newTo where
   newFrom' = if (from > otherFrom) then from - 1 else from
   newFrom'' = if (from > otherTo) then newFrom' + 1 else newFrom'
