@@ -88,7 +88,15 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
 
--- A delete affecting a replace turns into an insert
+
+-- ListReplace/ListDelete: a list replace on the same index as a list delete turns into a list insert
+transformRight op1@(ListReplace path1 index1 _ _) op2@(ListDelete path2 index2 item)
+  | (getFullPath op1) == (getFullPath op2) = Right $ ListInsert path2 index2 item
+-- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
+transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
+  | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
+
+-- A delete affecting a replace turns the replace into an insert
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
   | getFullPath op1 == getFullPath op2
   , value1 == old2 = Right $ ObjectInsert path1 key1 new2
@@ -105,10 +113,6 @@ transformRight op1 op2@(ListDelete path i value) =
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
 transformRight op1@(ObjectReplace {}) op2 = Right Identity
 transformRight op1@(ListDelete {}) op2 = Right Identity
-
--- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
-transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
-  | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
 
 transformRight x y = Left [i|transformRight not handled: #{x} affecting #{y}|]
 
