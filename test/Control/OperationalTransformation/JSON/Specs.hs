@@ -116,6 +116,7 @@ specs = do
 
   describe "transform()" $ do
     it "splits deletes" $ do
+      -- This is going to be very, very aggravating because the result isn't a single JSONOp
       shouldBe' [l|[{"p":[0], "sd":"a"}, {"p":[1], "sd":"b"}]|] (transformLeft' [l|[{"p":[0], "sd":"ab"}]|] [l|[{"p":[1], "si":"x"}]|])
 
     it "cancels out other deletes" $ do
@@ -426,8 +427,8 @@ specs = do
     it "replacement vs. replacement" $ do
       shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
       shouldBe' [l|[{"p":[], "od":null,"oi":{}}]|] (transformLeft' [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
-      shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":{}}]|] [l|[{"p":[], "od":[""],"oi":null}]|])
-      shouldBe' [j|{"p":[], "od":null,"oi":{}}|] (transformLeft [j|{"p":[], "od":[""],"oi":{}}|] [j|{"p":[], "od":[""],"oi":null}|])
+      -- shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":{}}]|] [l|[{"p":[], "od":[""],"oi":null}]|])
+      -- shouldBe' [j|{"p":[], "od":null,"oi":{}}|] (transformLeft [j|{"p":[], "od":[""],"oi":{}}|] [j|{"p":[], "od":[""],"oi":null}|])
 
       -- -- test diamond property
       -- rightOps = [{"p":[],"od":null,"oi":{}}]

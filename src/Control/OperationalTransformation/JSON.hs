@@ -29,11 +29,18 @@ invertOperation = undefined
 transformRightOp :: JSONOp -> JSONOp -> Either String JSONOp
 transformRightOp rightOp leftOp = snd <$> transform' leftOp rightOp
 transformRightOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
-transformRightOnes leftOps rightOps = JSONOperation <$> (sequence [foldM transformRightOp rightOp leftOps | rightOp <- rightOps])
+transformRightOnes leftOps rightOps = (normalize . JSONOperation) <$> (sequence [foldM transformRightOp rightOp leftOps | rightOp <- rightOps])
 transformLeftOp :: JSONOp -> JSONOp -> Either String JSONOp
 transformLeftOp leftOp rightOp = fst <$> transform' leftOp rightOp
 transformLeftOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
-transformLeftOnes leftOps rightOps = JSONOperation <$> (sequence [foldM transformLeftOp leftOp rightOps | leftOp <- leftOps])
+transformLeftOnes leftOps rightOps = (normalize . JSONOperation) <$> (sequence [foldM transformLeftOp leftOp rightOps | leftOp <- leftOps])
+
+
+-- * Normalize a JSONOperation
+-- For now, this will just filter out identity ops
+-- It could also potentially merge composable things
+normalize :: JSONOperation -> JSONOperation
+normalize (JSONOperation ops) = JSONOperation $ filter (/= Identity) ops
 
 
 instance OTOperation JSONOperation where
