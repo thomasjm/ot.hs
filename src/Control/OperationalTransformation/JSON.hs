@@ -10,6 +10,7 @@ module Control.OperationalTransformation.JSON
   ) where
 
 
+import Control.Monad
 import Control.OperationalTransformation
 import Control.OperationalTransformation.JSON.Affects (affects)
 import qualified Control.OperationalTransformation.JSON.Apply as AP
@@ -17,16 +18,29 @@ import qualified Control.OperationalTransformation.JSON.Compose as C
 import Control.OperationalTransformation.JSON.Transform (transformDouble, transformRight)
 import Control.OperationalTransformation.JSON.Types
 import qualified Data.Aeson as A
-import Data.String.Interpolate.IsString
 
 
 invertOperation = undefined
+
+
+-- * Functions for doing the N^2 operation of transforming two JSONOperations by rebasing the
+-- individual operations on each other. Note that this is inefficient at the moment, because it
+-- throws away results from transform' that it has to recompute later.
+transformRightOp :: JSONOp -> JSONOp -> Either String JSONOp
+transformRightOp rightOp leftOp = snd <$> transform' leftOp rightOp
+transformRightOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
+transformRightOnes leftOps rightOps = JSONOperation <$> (sequence [foldM transformRightOp rightOp leftOps | rightOp <- rightOps])
+transformLeftOp :: JSONOp -> JSONOp -> Either String JSONOp
+transformLeftOp leftOp rightOp = fst <$> transform' leftOp rightOp
+transformLeftOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
+transformLeftOnes leftOps rightOps = JSONOperation <$> (sequence [foldM transformLeftOp leftOp rightOps | leftOp <- leftOps])
+
 
 instance OTOperation JSONOperation where
   transform (JSONOperation [op1]) (JSONOperation [op2]) = case transform' op1 op2 of
     Left s -> Left s
     Right (op1, op2) -> Right (JSONOperation [op1], JSONOperation [op2])
-  transform l1 l2 = error [i|Don't know how to transform non-singleton lists: #{l2} and #{l2}|]
+  transform (JSONOperation leftOps) (JSONOperation rightOps) = (, ) <$> (transformLeftOnes leftOps rightOps) <*> (transformRightOnes leftOps rightOps)
 
 -- Handle identities up front
 transform' Identity op = Right (Identity, op)
@@ -51,5 +65,4 @@ instance OTComposableOperation JSONOperation where
   compose = C.compose
 
 instance OTSystem A.Value JSONOperation where
-  apply (JSONOperation [op]) val = AP.apply op val
-  apply _ val = error "Don't know how to apply non-singleton ops"
+  apply (JSONOperation ops) val = foldM (flip AP.apply) val ops

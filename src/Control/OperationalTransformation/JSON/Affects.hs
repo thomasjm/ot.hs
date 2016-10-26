@@ -105,6 +105,9 @@ affects (ApplySubtypeOperation path1 _ _) (ObjectReplace path2 key2 _ _) | path1
 -- Subtype operations could technically do anything...
 affects (ApplySubtypeOperation path1 _ _) (getPath -> path2) = path1 `isPrefixOf` path2
 
+-- Adds don't affects each other
+affects (Add {}) (Add {}) = False
+-- Otherwise, affects could only affect deletes, replaces, etc.
 affects (Add path1 _) (getPath -> path2) = path1 `isPrefixOf` path2
 
 affects _ _ = False

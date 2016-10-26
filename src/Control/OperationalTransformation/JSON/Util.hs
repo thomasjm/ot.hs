@@ -128,6 +128,11 @@ replaceIndex obj at newIndex = setFullPath path' obj where
   path = getFullPath obj
   path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
 
+replaceIndexFn obj at fn = setFullPath path' obj where
+  path = getFullPath obj
+  Pos index = path !! at
+  path' = (take at path) ++ [Pos $ fn index] ++ (drop (at + 1) path)
+
 -- | Get the path and key for an object. Useful for simplifying the "affects" function.
 getObjectPathAndKey (ObjectInsert path key _) = Just (path, key)
 getObjectPathAndKey (ObjectDelete path key _) = Just (path, key)

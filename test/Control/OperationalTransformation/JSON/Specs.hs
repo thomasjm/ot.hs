@@ -85,6 +85,9 @@ specs = do
       shouldBe' [v|3|] (apply [v|1|] [j|{"p":[], "na":2}|])
       shouldBe' [v|[3]|] (apply [v|[1]|] [j|{"p":[0], "na":2}|])
 
+    it "transforms adds" $ do
+      shouldBe' [j|{"p":[], "na": 0}|] (transformRight [j|{"p":[], "na": 0}|] [j|{"p":[], "na": 0}|])
+
     it "compresses two adds together in compose" $ do
       shouldBe' [l|[{"p":["a", "b"], "na":3}]|] (compose [j|{"p":["a", "b"], "na":1}|] [j|{"p":["a", "b"], "na":2}|])
       -- shouldBe' [j|{"p":["a"], "na":1}, {"p":["b"], "na":2}], type.compose [{"p":["a"], "na":1}], [{"p":["b"], "na":2}]

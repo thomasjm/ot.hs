@@ -13,7 +13,6 @@ import Control.OperationalTransformation.JSON.Util
 import Control.OperationalTransformation.Text0
 import Data.List
 import Data.String.Interpolate.IsString
-import qualified Data.Text as T
 
 
 invertOperation = error "invertOperation not implemented"
@@ -29,8 +28,6 @@ foo = affects -- Just to avoid warning that the import is unused
 ----------------------------------------------------------------------------------
 
 
--- ListInsert: bump up the index on the right operation
--- TODO: using init here is hideous, find another way
 transformRight :: JSONOp -> JSONOp -> Either String JSONOp
 
 -- ListDelete/ListMove
@@ -79,10 +76,8 @@ transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (len
 transformRight op1@(ListDelete path1 index1 value1) op2@(ListReplace path2 index2 old new)
   | path1 == path2 && index1 == index2 = Right $ ListInsert path2 index2 new
 
-transformRight op1@(ListInsert listPath _ val) op2 = Right $ setFullPath path' op2 where
-  (beginning, rest) = splitAt ((length $ getFullPath op1) + 1) (getFullPath op2)
-  listPos@(Pos x) = last beginning
-  path' = (init beginning) ++ [inc listPos] ++ rest
+-- ListInsert/Anything
+transformRight op1@(ListInsert listPath _ val) op2 = Right $ replaceIndexFn op2 (length listPath) (+ 1)
 
 -- ListDelete/ListInsert at same index: ListInsert is unchanged
 transformRight op1@(ListDelete path1 index1 val1) op2@(ListInsert path2 index2 val2)
@@ -110,14 +105,6 @@ transformRight op1 op2@(ListDelete path i value) =
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
 transformRight op1@(ObjectReplace {}) op2 = Right Identity
 transformRight op1@(ListDelete {}) op2 = Right Identity
-
--- StringInsert/Anything. TODO: extend this to general primitive ops.
-transformRight op1@(StringInsert path i str) op2 = Right $ setPath path' op2 where
-  (beginning, rest) = splitAt ((length path) + 1) (getPath op2)
-  prop@(Prop x) = last beginning
-  (pre, post) = T.splitAt i x
-  prop' = Prop $ pre `T.append` str `T.append` post
-  path' = (init beginning) ++ [prop'] ++ rest
 
 -- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
 transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
