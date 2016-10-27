@@ -35,8 +35,8 @@ transformLeft a b = a'
   where (a', _) = transform a b
 
 transformRight :: JSONOperation -> JSONOperation -> JSONOperation
-transformRight a b = a'
-  where (_, a') = transform b a
+transformRight a b = b'
+  where (_, b') = transform a b
 
 shouldBe' :: (Eq a, Show a) => a -> a -> Expectation
 shouldBe' = flip shouldBe
@@ -72,21 +72,6 @@ specs = do
     it "compresses two adds together in compose" $ do
       shouldBe' [l|[{"p":["a", "b"], "na":3}]|] (compose [s|{"p":["a", "b"], "na":1}|] [s|{"p":["a", "b"], "na":2}|])
       -- shouldBe' [s|{"p":["a"], "na":1}, {"p":["b"], "na":2}], type.compose [{"p":["a"], "na":1}], [{"p":["b"], "na":2}]
-
-    -- it "doesn\"t overwrite values when it merges na in append" $ do
-    --   let rightHas = A.Number 21
-    --   let leftHas = A.Number 3
-
-    --   let rightOp = [[s|{"p":[],"od":0,"oi":15}|], [s|{"p":[],"na":4}|], [s|{"p":[],"na":1}|], [s|{"p":[],"na":1}|]]
-    --   let leftOp = [[s|{"p":[],"na":4}|], [s|{"p":[],"na":-1}|]]
-
-    --   let left = [map (transformLeft x) rightOp | x <- leftOp]
-    --   let right = fmap transformRight leftOp
-
-    --   let s_c = foldl (flip apply) rightHas left
-    --   let c_s = apply right leftHas
-    --   s_c `shouldBe'` c_s
-
 
   -- # Strings should be handled internally by the text type. We"ll just do some basic sanity checks here.
   describe "string" $ do
@@ -152,10 +137,10 @@ specs = do
   describe "transform()" $ do
     it "bumps paths when list elements are inserted or removed" $ do
       shouldBe' [s|{"p":[2, 200], "si":"hi"}|] (transformLeft [s|{"p":[1, 200], "si":"hi"}|] [s|{"p":[0], "li":"x"}|])
-      shouldBe' [s|{"p":[1, 201], "si":"hi"}|] (transformRight [s|{"p":[0, 201], "si":"hi"}|] [s|{"p":[0], "li":"x"}|])
+      shouldBe' [s|{"p":[1, 201], "si":"hi"}|] (transformRight [s|{"p":[0], "li":"x"}|] [s|{"p":[0, 201], "si":"hi"}|])
       shouldBe' [s|{"p":[0, 202], "si":"hi"}|] (transformLeft [s|{"p":[0, 202], "si":"hi"}|] [s|{"p":[1], "li":"x"}|])
       shouldBe' [s|{"p":[2], "t":"text0", "o":[{"p":200, "i":"hi"}]}|] (transformLeft [s|{"p":[1], "t":"text0", "o":[{"p":200, "i":"hi"}]}|] [s|{"p":[0], "li":"x"}|])
-      shouldBe' [s|{"p":[1], "t":"text0", "o":[{"p":201, "i":"hi"}]}|] (transformRight [s|{"p":[0], "t":"text0", "o":[{"p":201, "i":"hi"}]}|] [s|{"p":[0], "li":"x"}|])
+      shouldBe' [s|{"p":[1], "t":"text0", "o":[{"p":201, "i":"hi"}]}|] (transformRight [s|{"p":[0], "li":"x"}|] [s|{"p":[0], "t":"text0", "o":[{"p":201, "i":"hi"}]}|])
       shouldBe' [s|{"p":[0], "t":"text0", "o":[{"p":202, "i":"hi"}]}|] (transformLeft [s|{"p":[0], "t":"text0", "o":[{"p":202, "i":"hi"}]}|] [s|{"p":[1], "li":"x"}|])
 
       shouldBe' [s|{"p":[0, 203], "si":"hi"}|] (transformLeft [s|{"p":[1, 203], "si":"hi"}|] [s|{"p":[0], "ld":"x"}|])
@@ -168,7 +153,7 @@ specs = do
       shouldBe' [s|{"p":["x",4,2], "si": "hi"}|] (transformLeft [s|{"p":["x",3,2], "si":"hi"}|] [s|{"p":["x",0], "li":0}|])
 
       shouldBe' [s|{"p":[1], "ld":2}|] (transformLeft [s|{"p":[0], "ld":2}|] [s|{"p":[0], "li":1}|])
-      shouldBe' [s|{"p":[1], "ld":2}|] (transformRight [s|{"p":[0], "ld":2}|] [s|{"p":[0], "li":1}|])
+      shouldBe' [s|{"p":[1], "ld":2}|] (transformRight [s|{"p":[0], "li":1}|] [s|{"p":[0], "ld":2}|])
 
       shouldBe' [s|{"p":[0], "t":"text0", "o":[{"p":203, "i":"hi"}]}|] (transformLeft [s|{"p":[1], "t":"text0", "o":[{"p":203, "i":"hi"}]}|] [s|{"p":[0], "ld":"x"}|])
       shouldBe' [s|{"p":[0], "t":"text0", "o":[{"p":204, "i":"hi"}]}|] (transformLeft [s|{"p":[0], "t":"text0", "o":[{"p":204, "i":"hi"}]}|] [s|{"p":[1], "ld":"x"}|])
@@ -194,7 +179,7 @@ specs = do
 
     it "Puts the left op first if two inserts are simultaneous" $ do
       shouldBe' [s|{"p":[1], "li":"a"}|] (transformLeft [s|{"p":[1], "li":"a"}|] [s|{"p":[1], "li":"b"}|])
-      shouldBe' [s|{"p":[2], "li":"b"}|] (transformRight [s|{"p":[1], "li":"b"}|] [s|{"p":[1], "li":"a"}|])
+      shouldBe' [s|{"p":[2], "li":"b"}|] (transformRight [s|{"p":[1], "li":"a"}|] [s|{"p":[1], "li":"b"}|])
 
     it "converts an attempt to re-delete a list element into a no-op" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p":[1], "ld":"x"}|] [s|{"p":[1], "ld":"x"}|])
@@ -205,7 +190,7 @@ specs = do
       it "composes insert then delete into a no-op" $ do
         shouldBe' [l|[{}]|] (compose [s|{"p":[1], "li":"abc"}|] [s|{"p":[1], "ld":"abc"}|])
         shouldBe' [l|[{"p":[0], "ld":"abc"}]|] (compose [s|{"p":[0], "ld":"abc", "li":null}|] [s|{"p":[0], "ld":null}|])
-        shouldBe' [s|{"p":[1], "ld":null, "li":"x"}|] (transformRight [s|{"p":[0], "ld":null, "li":"x"}|] [s|{"p":[0], "li":"The"}|])
+        shouldBe' [s|{"p":[1], "ld":null, "li":"x"}|] (transformRight [s|{"p":[0], "li":"The"}|] [s|{"p":[0], "ld":null, "li":"x"}|])
 
       it "composes together adjacent string ops" $ do
         shouldBe' [l|[{"p":[100], "si":"hi"}]|] (compose [s|{"p":[100], "si":"h"}|] [s|{"p":[101], "si":"i"}|])
@@ -229,7 +214,7 @@ specs = do
       -- -- s: [_,6,_,_,_,5,7,_]  p:5 "lm":1
       -- -- correct: [_,_,_,_,5,7,_]
       shouldBe' [s|{"p":[1], "ld":6}|] (transformLeft [s|{"p":[5], "ld":6}|] [s|{"p":[5], "lm":1}|])
-      shouldBe' [s|{"p":[0], "li":{}}|] (transformRight [s|{"p":[0], "li":{}}|] [s|{"p":[0], "lm":0}|])
+      shouldBe' [s|{"p":[0], "li":{}}|] (transformRight [s|{"p":[0], "lm":0}|] [s|{"p":[0], "li":{}}|])
       shouldBe' [s|{"p":[0], "li":[]}|] (transformLeft [s|{"p":[0], "li":[]}|] [s|{"p":[1], "lm":0}|])
       shouldBe' [s|{"p":[2], "li":"x"}|] (transformLeft [s|{"p":[2], "li":"x"}|] [s|{"p":[0], "lm":1}|])
 
@@ -242,18 +227,18 @@ specs = do
 
     it "tiebreaks lm vs. ld/li" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p":[0], "lm": 2}|] [s|{"p":[0], "ld":"x"}|])
-      shouldBe' [s|{}|] (transformRight [s|{"p":[0], "lm": 2}|] [s|{"p":[0], "ld":"x"}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":[0], "ld":"x"}|] [s|{"p":[0], "lm": 2}|])
       shouldBe' [s|{"p":[1], "lm":3}|] (transformLeft [s|{"p":[0], "lm": 2}|] [s|{"p":[0], "li":"x"}|])
-      shouldBe' [s|{"p":[1], "lm":3}|] (transformRight [s|{"p":[0], "lm": 2}|] [s|{"p":[0], "li":"x"}|])
+      shouldBe' [s|{"p":[1], "lm":3}|] (transformRight [s|{"p":[0], "li":"x"}|] [s|{"p":[0], "lm": 2}|])
 
     it "replacement vs. deletion" $ do
-      shouldBe' [s|{"p":[0], "li":"y"}|] (transformRight [s|{"p":[0], "ld":"x", "li":"y"}|] [s|{"p":[0], "ld":"x"}|])
+      shouldBe' [s|{"p":[0], "li":"y"}|] (transformRight [s|{"p":[0], "ld":"x"}|] [s|{"p":[0], "ld":"x", "li":"y"}|])
 
     it "replacement vs. insertion" $ do
       shouldBe' [s|{"p":[1], "ld":{}, "li":"brillig"}|] (transformLeft [s|{"p":[0], "ld":{}, "li":"brillig"}|] [s|{"p":[0], "li":36}|])
 
     it "replacement vs. replacement" $ do
-      shouldBe' [s|{}|]                 (transformRight [s|{"p":[0], "ld":null, "li":[]}|] [s|{"p":[0], "ld":null, "li":0}|])
+      shouldBe' [s|{}|]                 (transformRight [s|{"p":[0], "ld":null, "li":0}|] [s|{"p":[0], "ld":null, "li":[]}|])
       shouldBe' [s|{"p":[0], "ld":[], "li":0}|] (transformLeft  [s|{"p":[0], "ld":null, "li":0}|] [s|{"p":[0], "ld":null, "li":[]}|])
 
     it "composes replace with delete of replaced element results in insert" $ do
@@ -265,34 +250,34 @@ specs = do
       shouldBe' [s|{"p":[4], "lm":4}|] (transformLeft [s|{"p":[3], "lm":3}|] [s|{"p":[5], "lm":0}|])
 
       shouldBe' [s|{"p":[2], "lm":0}|] (transformLeft [s|{"p":[2], "lm":0}|] [s|{"p":[1], "lm":0}|])
-      shouldBe' [s|{"p":[2], "lm":1}|] (transformRight [s|{"p":[2], "lm":0}|] [s|{"p":[1], "lm":0}|])
+      shouldBe' [s|{"p":[2], "lm":1}|] (transformRight [s|{"p":[1], "lm":0}|] [s|{"p":[2], "lm":0}|])
 
-      shouldBe' [s|{"p":[3], "lm":1}|] (transformRight [s|{"p":[2], "lm":0}|] [s|{"p":[5], "lm":0}|])
+      shouldBe' [s|{"p":[3], "lm":1}|] (transformRight [s|{"p":[5], "lm":0}|] [s|{"p":[2], "lm":0}|])
       shouldBe' [s|{"p":[3], "lm":0}|] (transformLeft [s|{"p":[2], "lm":0}|] [s|{"p":[5], "lm":0}|])
 
       -- TODO: why is this test duplicated. One side should be right I guess?
       shouldBe' [s|{"p":[0], "lm":5}|] (transformLeft [s|{"p":[2], "lm":5}|] [s|{"p":[2], "lm":0}|])
       shouldBe' [s|{"p":[0], "lm":5}|] (transformLeft [s|{"p":[2], "lm":5}|] [s|{"p":[2], "lm":0}|])
 
-      shouldBe' [s|{"p":[0], "lm":0}|] (transformRight [s|{"p":[1], "lm":0}|] [s|{"p":[0], "lm":5}|])
-      shouldBe' [s|{"p":[0], "lm":0}|] (transformRight [s|{"p":[1], "lm":0}|] [s|{"p":[0], "lm":1}|])
+      shouldBe' [s|{"p":[0], "lm":0}|] (transformRight [s|{"p":[0], "lm":5}|] [s|{"p":[1], "lm":0}|])
+      shouldBe' [s|{"p":[0], "lm":0}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[1], "lm":0}|])
 
       shouldBe' [s|{"p":[1], "lm":1}|] (transformLeft [s|{"p":[0], "lm":1}|] [s|{"p":[1], "lm":0}|])
-      shouldBe' [s|{"p":[1], "lm":2}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[5], "lm":0}|])
+      shouldBe' [s|{"p":[1], "lm":2}|] (transformRight [s|{"p":[5], "lm":0}|] [s|{"p":[0], "lm":1}|])
 
-      shouldBe' [s|{"p":[3], "lm":2}|] (transformRight [s|{"p":[2], "lm":1}|] [s|{"p":[5], "lm":0}|])
+      shouldBe' [s|{"p":[3], "lm":2}|] (transformRight [s|{"p":[5], "lm":0}|] [s|{"p":[2], "lm":1}|])
 
       shouldBe' [s|{"p":[2], "lm":1}|] (transformLeft [s|{"p":[3], "lm":1}|] [s|{"p":[1], "lm":3}|])
       shouldBe' [s|{"p":[2], "lm":3}|] (transformLeft [s|{"p":[1], "lm":3}|] [s|{"p":[3], "lm":1}|])
 
       shouldBe' [s|{"p":[2], "lm":6}|] (transformLeft [s|{"p":[2], "lm":6}|] [s|{"p":[0], "lm":1}|])
-      shouldBe' [s|{"p":[2], "lm":6}|] (transformRight [s|{"p":[2], "lm":6}|] [s|{"p":[0], "lm":1}|])
+      shouldBe' [s|{"p":[2], "lm":6}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[2], "lm":6}|])
 
       shouldBe' [s|{"p":[2], "lm":6}|] (transformLeft [s|{"p":[2], "lm":6}|] [s|{"p":[1], "lm":0}|])
-      shouldBe' [s|{"p":[2], "lm":6}|] (transformRight [s|{"p":[2], "lm":6}|] [s|{"p":[1], "lm":0}|])
+      shouldBe' [s|{"p":[2], "lm":6}|] (transformRight [s|{"p":[1], "lm":0}|] [s|{"p":[2], "lm":6}|])
 
       shouldBe' [s|{"p":[0], "lm":2}|] (transformLeft [s|{"p":[0], "lm":1}|] [s|{"p":[2], "lm":1}|])
-      shouldBe' [s|{"p":[2], "lm":0}|] (transformRight [s|{"p":[2], "lm":1}|] [s|{"p":[0], "lm":1}|])
+      shouldBe' [s|{"p":[2], "lm":0}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[2], "lm":1}|])
 
       shouldBe' [s|{"p":[1], "lm":1}|] (transformLeft [s|{"p":[0], "lm":0}|] [s|{"p":[1], "lm":0}|])
 
@@ -307,12 +292,12 @@ specs = do
       shouldBe' [s|{"p":[0], "lm":0}|] (transformLeft [s|{"p":[0], "lm":1}|] [s|{"p":[1], "ld":{}}|])
       shouldBe' [s|{"p":[5], "lm":0}|] (transformLeft [s|{"p":[6], "lm":0}|] [s|{"p":[2], "ld":{}}|])
       shouldBe' [s|{"p":[1], "lm":0}|] (transformLeft [s|{"p":[1], "lm":0}|] [s|{"p":[2], "ld":{}}|])
-      shouldBe' [s|{"p":[1], "lm":1}|] (transformRight [s|{"p":[2], "lm":1}|] [s|{"p":[1], "ld":3}|])
+      shouldBe' [s|{"p":[1], "lm":1}|] (transformRight [s|{"p":[1], "ld":3}|] [s|{"p":[2], "lm":1}|])
 
-      shouldBe' [s|{"p":[1], "ld":{}}|] (transformRight [s|{"p":[2], "ld":{}}|] [s|{"p":[1], "lm":2}|])
+      shouldBe' [s|{"p":[1], "ld":{}}|] (transformRight [s|{"p":[1], "lm":2}|] [s|{"p":[2], "ld":{}}|])
       shouldBe' [s|{"p":[2], "ld":{}}|] (transformLeft [s|{"p":[1], "ld":{}}|] [s|{"p":[2], "lm":1}|])
 
-      shouldBe' [s|{"p":[0], "ld":{}}|] (transformRight [s|{"p":[1], "ld":{}}|] [s|{"p":[0], "lm":1}|])
+      shouldBe' [s|{"p":[0], "ld":{}}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[1], "ld":{}}|])
 
       shouldBe' [s|{"p":[0], "ld":1, "li":2}|] (transformLeft [s|{"p":[1], "ld":1, "li":2}|] [s|{"p":[1], "lm":0}|])
       shouldBe' [s|{"p":[0], "ld":2, "li":3}|] (transformLeft [s|{"p":[1], "ld":2, "li":3}|] [s|{"p":[0], "lm":1}|])
@@ -329,11 +314,11 @@ specs = do
       shouldBe' (li 2) (transformLeft (li 3) (lm 1 3))
       shouldBe' (li 4) (transformLeft (li 4) (lm 1 3))
 
-      shouldBe' (lm 2 4) (transformRight (lm 1 3) (li 0))
-      shouldBe' (lm 2 4) (transformRight (lm 1 3) (li 1))
-      shouldBe' (lm 1 4) (transformRight (lm 1 3) (li 2))
-      shouldBe' (lm 1 4) (transformRight (lm 1 3) (li 3))
-      shouldBe' (lm 1 3) (transformRight (lm 1 3) (li 4))
+      shouldBe' (lm 2 4) (transformRight (li 0) (lm 1 3))
+      shouldBe' (lm 2 4) (transformRight (li 1) (lm 1 3))
+      shouldBe' (lm 1 4) (transformRight (li 2) (lm 1 3))
+      shouldBe' (lm 1 4) (transformRight (li 3) (lm 1 3))
+      shouldBe' (lm 1 3) (transformRight (li 4) (lm 1 3))
 
       shouldBe' (li 0) (transformLeft (li 0) (lm 1 2))
       shouldBe' (li 1) (transformLeft (li 1) (lm 1 2))
@@ -346,11 +331,11 @@ specs = do
       shouldBe' (li 4) (transformLeft (li 3) (lm 3 1))
       shouldBe' (li 4) (transformLeft (li 4) (lm 3 1))
 
-      shouldBe' (lm 4 2) (transformRight (lm 3 1) (li 0))
-      shouldBe' (lm 4 2) (transformRight (lm 3 1) (li 1))
-      shouldBe' (lm 4 1) (transformRight (lm 3 1) (li 2))
-      shouldBe' (lm 4 1) (transformRight (lm 3 1) (li 3))
-      shouldBe' (lm 3 1) (transformRight (lm 3 1) (li 4))
+      shouldBe' (lm 4 2) (transformRight (li 0) (lm 3 1))
+      shouldBe' (lm 4 2) (transformRight (li 1) (lm 3 1))
+      shouldBe' (lm 4 1) (transformRight (li 2) (lm 3 1))
+      shouldBe' (lm 4 1) (transformRight (li 3) (lm 3 1))
+      shouldBe' (lm 3 1) (transformRight (li 4) (lm 3 1))
 
       shouldBe' (li 0) (transformLeft (li 0) (lm 2 1))
       shouldBe' (li 1) (transformLeft (li 1) (lm 2 1))
@@ -370,9 +355,9 @@ specs = do
 
     it "Ops on deleted elements become noops" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p":["1", 0], "si":"hi"}|] [s|{"p":["1"], "od":"x"}|])
-      shouldBe' [s|{}|] (transformRight [s|{"p":[9],"si":"bite "}|] [s|{"p":[], "od":"agimble s","oi":null}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":[], "od":"agimble s","oi":null}|] [s|{"p":[9],"si":"bite "}|])
       shouldBe' [s|{}|] (transformLeft [s|{"p":["1"], "t":"text0", "o":[{"p":0, "i":"hi"}]}|] [s|{"p":["1"], "od":"x"}|])
-      shouldBe' [s|{}|] (transformRight [s|{"p":[], "t":"text0", "o":[{"p":9, "i":"bite "}]}|] [s|{"p":[], "od":"agimble s","oi":null}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":[], "od":"agimble s","oi":null}|] [s|{"p":[], "t":"text0", "o":[{"p":9, "i":"bite "}]}|])
 
     it "Ops on replaced elements become noops" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p":["1", 0], "si":"hi"}|] [s|{"p":["1"], "od":"x", "oi":"y"}|])
@@ -385,29 +370,29 @@ specs = do
       shouldBe' [s|{"p":[], "od":{"toves":""},"oi":4}|] (transformLeft [s|{"p":[], "od":{"toves":0},"oi":4}|] [s|{"p":["toves"], "od":0,"oi":""}|])
       shouldBe' [s|{"p":[], "od":"thou an","oi":[]}|] (transformLeft [s|{"p":[], "od":"thou and ","oi":[]}|] [s|{"p":[7],"sd":"d "}|])
       shouldBe' [s|{"p":[], "od":"thou an","oi":[]}|] (transformLeft [s|{"p":[], "od":"thou and ","oi":[]}|] [s|{"p":[], "t":"text0", "o":[{"p":7, "d":"d "}]}|])
-      shouldBe' [s|{}|] (transformRight [s|{"p":["bird"],"na":2}|] [s|{"p":[], "od":{"bird":38},"oi":20}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":[], "od":{"bird":38},"oi":20}|] [s|{"p":["bird"],"na":2}|])
       shouldBe' [s|{"p":[], "od":{"bird":40},"oi":20}|] (transformLeft [s|{"p":[], "od":{"bird":38},"oi":20}|] [s|{"p":["bird"],"na":2}|])
-      shouldBe' [s|{"p":["He"], "od":[]}|] (transformRight [s|{"p":["He"], "od":[]}|] [s|{"p":["The"],"na":-3}|])
+      shouldBe' [s|{"p":["He"], "od":[]}|] (transformRight [s|{"p":["The"],"na":-3}|] [s|{"p":["He"], "od":[]}|])
       shouldBe' [s|{}|] (transformLeft [s|{"p":["He"],"oi":{}}|] [s|{"p":[], "od":{},"oi":"the"}|])
 
     it "If two inserts are simultaneous, the lefts insert will win" $ do
       shouldBe' [s|{"p":["1"], "oi":"a", "od":"b"}|] (transformLeft [s|{"p":["1"], "oi":"a"}|] [s|{"p":["1"], "oi":"b"}|])
-      shouldBe' [s|{}|] (transformRight [s|{"p":["1"], "oi":"b"}|] [s|{"p":["1"], "oi":"a"}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":["1"], "oi":"a"}|] [s|{"p":["1"], "oi":"b"}|])
 
     it "parallel ops on different keys miss each other" $ do
       shouldBe' [s|{"p":["a"], "oi": "x"}|] (transformLeft [s|{"p":["a"], "oi":"x"}|] [s|{"p":["b"], "oi":"z"}|])
       shouldBe' [s|{"p":["a"], "oi": "x"}|] (transformLeft [s|{"p":["a"], "oi":"x"}|] [s|{"p":["b"], "od":"z"}|])
-      shouldBe' [s|{"p":["in","he"],"oi":{}}|] (transformRight [s|{"p":["in","he"],"oi":{}}|] [s|{"p":["and"], "od":{}}|])
-      shouldBe' [s|{"p":["x",0],"si":"his "}|] (transformRight [s|{"p":["x",0],"si":"his "}|] [s|{"p":["y"], "od":0,"oi":1}|])
-      shouldBe' [s|{"p":["x"], "t":"text0", "o":[{"p":0, "i":"his "}]}|] (transformRight [s|{"p":["x"], "t":"text0", "o":[{"p":0, "i":"his "}]}|] [s|{"p":["y"], "od":0, "oi":1}|])
+      shouldBe' [s|{"p":["in","he"],"oi":{}}|] (transformRight [s|{"p":["and"], "od":{}}|] [s|{"p":["in","he"],"oi":{}}|])
+      shouldBe' [s|{"p":["x",0],"si":"his "}|] (transformRight [s|{"p":["y"], "od":0,"oi":1}|] [s|{"p":["x",0],"si":"his "}|])
+      shouldBe' [s|{"p":["x"], "t":"text0", "o":[{"p":0, "i":"his "}]}|] (transformRight [s|{"p":["y"], "od":0, "oi":1}|] [s|{"p":["x"], "t":"text0", "o":[{"p":0, "i":"his "}]}|])
 
     it "replacement vs. deletion" $ do
-      shouldBe' [s|{"p":[], "oi":{}}|] (transformRight [s|{"p":[], "od":[""], "oi":{}}|] [s|{"p":[], "od":[""]}|])
+      shouldBe' [s|{"p":[], "oi":{}}|] (transformRight [s|{"p":[], "od":[""]}|] [s|{"p":[], "od":[""], "oi":{}}|])
 
     it "replacement vs. replacement" $ do
-      shouldBe' [l|[]|] (transformRight [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
+      shouldBe' [l|[]|] (transformRight [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|])
       shouldBe' [l|[{"p":[], "od":null,"oi":{}}]|] (transformLeft [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
-      -- shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":{}}]|] [l|[{"p":[], "od":[""],"oi":null}]|])
+      -- shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":null}]|] [l|[{"p":[], "od":[""],"oi":{}}]|])
       -- shouldBe' [s|{"p":[], "od":null,"oi":{}}|] (transformLeft [s|{"p":[], "od":[""],"oi":{}}|] [s|{"p":[], "od":[""],"oi":null}|])
 
       -- -- test diamond property
