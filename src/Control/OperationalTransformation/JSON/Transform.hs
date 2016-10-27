@@ -17,8 +17,8 @@ import Data.String.Interpolate.IsString
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = [j|{"p":[0],"ld":"x","li":"y"}|]
-op2 = [j|{"p":[0],"ld":"x"}|]
+op1 = [s|{"p":[0],"ld":"x","li":"y"}|]
+op2 = [s|{"p":[0],"ld":"x"}|]
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------

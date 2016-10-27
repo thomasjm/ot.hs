@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings, QuasiQuotes, NamedFieldPuns #-}
 
-module Control.OperationalTransformation.JSON.QuasiQuote (v, j, l) where
+module Control.OperationalTransformation.JSON.QuasiQuote (v, s, l) where
 
 import Control.OperationalTransformation.JSON.Types
 import Data.Aeson
@@ -17,8 +17,8 @@ v = aesonQQ
 
 ------------------------------------------------------------------------
 
-j :: QuasiQuoter
-j = QuasiQuoter {
+s :: QuasiQuoter
+s = QuasiQuoter {
   quoteExp = jsonOpExp,
   quotePat = const $ error "No quotePat defined for JSONOp quasiquoter",
   quoteType = const $ error "No quoteType defined for JSONOp quasiquoter",
@@ -29,7 +29,7 @@ jsonOpExp :: String -> ExpQ
 jsonOpExp txt =
   case eitherDecode $ BS8.pack txt of
     Left err -> error $ "Error in aesonExp: " ++ show err
-    Right !(val :: JSONOp) -> lift val
+    Right !(val :: JSONOp) -> lift $ JSONOperation [val]
 
 ------------------------------------------------------------------------
 
