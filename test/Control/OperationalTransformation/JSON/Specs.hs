@@ -322,21 +322,20 @@ specs = do
 
     it "changes indices correctly around a move" $ do
       shouldBe' [j|{"p":[1,0], "li":{}}|] (transformLeft [j|{"p":[0,0], "li":{}}|] [j|{"p":[1], "lm":0}|])
-      -- shouldBe' [j|{"p":[0], "lm":0}|] (transformLeft [j|{"p":[1], "lm":0}|] [j|{"p":[0], "ld":{}}|])
-      -- shouldBe' [j|{"p":[0], "lm":0}|] (transformLeft [j|{"p":[0], "lm":1}|] [j|{"p":[1], "ld":{}}|])
-      -- shouldBe' [j|{"p":[5], "lm":0}|] (transformLeft [j|{"p":[6], "lm":0}|] [j|{"p":[2], "ld":{}}|])
-      -- shouldBe' [j|{"p":[1], "lm":0}|] (transformLeft [j|{"p":[1], "lm":0}|] [j|{"p":[2], "ld":{}}|])
-      -- shouldBe' [j|{"p":[1], "lm":1}|] (transformRight [j|{"p":[2], "lm":1}|] [j|{"p":[1], "ld":3}|])
+      shouldBe' [j|{"p":[0], "lm":0}|] (transformLeft [j|{"p":[1], "lm":0}|] [j|{"p":[0], "ld":{}}|])
+      shouldBe' [j|{"p":[0], "lm":0}|] (transformLeft [j|{"p":[0], "lm":1}|] [j|{"p":[1], "ld":{}}|])
+      shouldBe' [j|{"p":[5], "lm":0}|] (transformLeft [j|{"p":[6], "lm":0}|] [j|{"p":[2], "ld":{}}|])
+      shouldBe' [j|{"p":[1], "lm":0}|] (transformLeft [j|{"p":[1], "lm":0}|] [j|{"p":[2], "ld":{}}|])
+      shouldBe' [j|{"p":[1], "lm":1}|] (transformRight [j|{"p":[2], "lm":1}|] [j|{"p":[1], "ld":3}|])
 
-      -- shouldBe' [j|{"p":[1], "ld":{}}|] (transformRight [j|{"p":[2], "ld":{}}|] [j|{"p":[1], "lm":2}|])
-      -- shouldBe' [j|{"p":[2], "ld":{}}|] (transformLeft [j|{"p":[1], "ld":{}}|] [j|{"p":[2], "lm":1}|])
+      shouldBe' [j|{"p":[1], "ld":{}}|] (transformRight [j|{"p":[2], "ld":{}}|] [j|{"p":[1], "lm":2}|])
+      shouldBe' [j|{"p":[2], "ld":{}}|] (transformLeft [j|{"p":[1], "ld":{}}|] [j|{"p":[2], "lm":1}|])
 
+      shouldBe' [j|{"p":[0], "ld":{}}|] (transformRight [j|{"p":[1], "ld":{}}|] [j|{"p":[0], "lm":1}|])
 
-      -- shouldBe' [j|{"p":[0], "ld":{}}|] (transformRight [j|{"p":[1], "ld":{}}|] [j|{"p":[0], "lm":1}|])
-
-      -- shouldBe' [j|{"p":[0], "ld":1, "li":2}|] (transformLeft [j|{"p":[1], "ld":1, "li":2}|] [j|{"p":[1], "lm":0}|])
-      -- shouldBe' [j|{"p":[0], "ld":2, "li":3}|] (transformLeft [j|{"p":[1], "ld":2, "li":3}|] [j|{"p":[0], "lm":1}|])
-      -- shouldBe' [j|{"p":[1], "ld":3, "li":4}|] (transformLeft [j|{"p":[0], "ld":3, "li":4}|] [j|{"p":[1], "lm":0}|])
+      shouldBe' [j|{"p":[0], "ld":1, "li":2}|] (transformLeft [j|{"p":[1], "ld":1, "li":2}|] [j|{"p":[1], "lm":0}|])
+      shouldBe' [j|{"p":[0], "ld":2, "li":3}|] (transformLeft [j|{"p":[1], "ld":2, "li":3}|] [j|{"p":[0], "lm":1}|])
+      shouldBe' [j|{"p":[1], "ld":3, "li":4}|] (transformLeft [j|{"p":[0], "ld":3, "li":4}|] [j|{"p":[1], "lm":0}|])
 
     it "li vs lm" $ do
       let li = \(p :: Int) -> ListInsert [] p [v|[]|]

@@ -31,18 +31,20 @@ foo = affects -- Just to avoid warning that the import is unused
 transformRight :: JSONOp -> JSONOp -> Either String JSONOp
 
 -- ListDelete/ListMove
-transformRight op1@(ListDelete path1 index1 _) op2@(ListMove path2 index21 index22) =
+transformRight op1@(ListDelete {}) op2@(ListMove path2 index21 index22) =
   if -- Delete of the thing being moved makes the move a no-op
-     | path1 == path2 && index1 == index21 -> Right Identity
+     | index1 == index21 -> Right Identity
      -- Delete in the middle of the range causes the top index to go down
-     | path1 == path2 && index1 > bottom && index1 < top && index22 > index21 -> Right $ ListMove path2 index21 (index22 - 1)
-     | path1 == path2 && index1 > bottom && index1 < top && index22 < index21 -> Right $ ListMove path2 (index21 - 1) index22
+     | index21 <= index1 && index1 <= index22 -> Right $ ListMove path2 index21 (index22 - 1)
+     | index22 <= index1 && index1 <= index21 -> Right $ ListMove path2 (index21 - 1) index22
      -- Delete before the range causes both indices to go down
-     | path1 == path2 && index1 <= bottom -> Right $ ListMove path2 (index21 - 1) (index22 - 1)
+     | index1 < bottom -> Right $ ListMove path2 (index21 - 1) (index22 - 1)
      -- Otherwise, no change
      | otherwise -> Right op2
   where bottom = min index21 index22
         top = max index21 index22
+        Pos index1 = (getFullPath op1) !! length path2
+
 -- ListInsert/ListMove
 transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index22) =
   if -- Insert in the middle of the range causes the top index to go up
@@ -64,12 +66,14 @@ transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2
   | path1 == path2 && index12 < index2 && index2 <= index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
   -- If the ListInsert is at or before the smaller index of the ListMove, it's not affected. TODO: cover this in `affects`
   | path1 == path2 && index2 <= (min index11 index12) = Right op2
-  -- If the ListInsert is at or after the larger index of the ListMove, it's not affected
+  -- If the ListInsert is at or after the larger index of the ListMove, it's not affected. TODO: cover this in `affects`
   | path1 == path2 && index2 >= (max index11 index12) = Right op2
 -- ListMove/Anything
 transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
   | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
-  | i > listIndex1 && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
+  -- in between
+  | listIndex1 <= i && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
+  | listIndex2 <= i && i <= listIndex1 = Right $ replaceIndex op2 (length listPath1) (i + 1)
   | otherwise = Right op2
 
 -- ListDelete/ListReplace: a delete affecting a replace turns into an insert. TODO: what if the delete is inside the replace?
