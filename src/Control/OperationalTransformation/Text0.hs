@@ -18,6 +18,7 @@ module Control.OperationalTransformation.Text0
 
 
 import Control.DeepSeq
+import Control.Monad
 import Control.OperationalTransformation
 import Data.Aeson as A
 import Data.Convertible
@@ -44,8 +45,31 @@ invertOperation = undefined
 isBlank (TextInsert _ s) = s == ""
 isBlank (TextDelete _ s) = s == ""
 
-getPathFromSingleton (T0 [op@(TextInsert p _)]) = (p, op)
-getPathFromSingleton (T0 [op@(TextDelete p _)]) = (p, op)
+getPathFromSingleton (T0 [op@(TextInsert p _)]) = Just (p, op)
+getPathFromSingleton (T0 [op@(TextDelete p _)]) = Just (p, op)
+getPathFromSingleton _ = Nothing
+
+t x = T0 [x]
+
+-- * Functions for doing the N^2 operation of transforming two JSONOperations by rebasing the
+-- individual operations on each other. Note that this is inefficient at the moment, because it
+-- throws away results from transform' that it has to recompute later.
+transformRightOp :: Text0Operation -> Text0Operation -> Either String Text0Operation
+transformRightOp rightOp leftOp = snd <$> transform leftOp rightOp
+
+transformRightOnes :: [SingleText0Operation] -> [SingleText0Operation] -> Either String Text0Operation
+transformRightOnes leftOps rightOps = mconcat <$> (sequence [foldM transformRightOp (t rightOp) (fmap t leftOps) | rightOp <- rightOps])
+
+transformLeftOp :: Text0Operation -> Text0Operation -> Either String Text0Operation
+transformLeftOp leftOp rightOp = fst <$> transform leftOp rightOp
+
+transformLeftOnes :: [SingleText0Operation] -> [SingleText0Operation] -> Either String Text0Operation
+transformLeftOnes leftOps rightOps = mconcat <$> (sequence [foldM transformLeftOp (t leftOp) (fmap t rightOps) | leftOp <- leftOps])
+
+
+instance Monoid Text0Operation where
+  mempty = T0 []
+  (T0 ops1) `mappend` (T0 ops2) = T0 (ops1 ++ ops2)
 
 
 instance OTOperation Text0Operation where
@@ -56,29 +80,14 @@ instance OTOperation Text0Operation where
   transform (T0 [op1]) (T0 [op2]) | isBlank op2 = Right (T0 [op1], T0 [])
   transform (T0 [op1]) (T0 [op2]) | isBlank op2 && isBlank op2 = Right (T0 [], T0 [])
 
-  transform (getPathFromSingleton -> (p1, op1)) (getPathFromSingleton -> (p2, op2)) | p1 > p2 = rev <$> transform' op2 op1
-  transform (getPathFromSingleton -> (_, op1)) (getPathFromSingleton -> (_, op2)) = transform' op1 op2
+  transform (getPathFromSingleton -> Just (p1, op1)) (getPathFromSingleton -> Just (p2, op2)) | p1 > p2 = rev <$> transform' op2 op1
+  transform (getPathFromSingleton -> Just (_, op1)) (getPathFromSingleton -> Just (_, op2)) = transform' op1 op2
 
-  -- This is just copying the generic logic from Control.OperationalTransformation
-  -- transform (T0 ops1) (T0 ops2) = (\(x, y) -> (T0 x, T0 y)) <$> transformList2 ops1 ops2
-  --   where
-  --     transformList1 o [] = return (o, [])
-  --     transformList1 o (p:ps) = do
-  --       (T0 [o'], T0 [p']) <- transform (T0 [o]) (T0 [p])
-  --       (o'', ps') <- transformList1 o' ps
-  --       return (o'', p':ps')
-
-  --     transformList2 [] ps = return ([], ps)
-  --     transformList2 (o:os) ps = do
-  --       (o', ps') <- transformList1 o ps
-  --       (os', ps'') <- transformList2 os ps'
-  --       return (o':os', ps'')
+  transform (T0 leftOps) (T0 rightOps) = (, ) <$> (transformLeftOnes leftOps rightOps) <*> (transformRightOnes leftOps rightOps)
 
 
 rev (a, b) = (b, a)
-
 wrapList (a, b) = ([a], [b])
-
 len = T.length
 
 -- In transform', p1 <= p2 guaranteed
