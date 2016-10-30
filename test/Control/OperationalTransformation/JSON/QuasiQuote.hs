@@ -1,9 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables, BangPatterns #-}
 {-# LANGUAGE TemplateHaskell, OverloadedStrings, QuasiQuotes, NamedFieldPuns #-}
 
-module Control.OperationalTransformation.JSON.QuasiQuote (v, s, l) where
+module Control.OperationalTransformation.JSON.QuasiQuote (v, s, l, x) where
 
 import Control.OperationalTransformation.JSON.Types
+import Control.OperationalTransformation.Text0
 import Data.Aeson
 import Data.Aeson.QQ
 import qualified Data.ByteString.Lazy.Char8 as BS8
@@ -46,3 +47,20 @@ jsonOperationExp txt =
   case eitherDecode $ BS8.pack txt of
     Left err -> error $ "Error in aesonExp: " ++ show err
     Right (val :: JSONOperation) -> lift val
+
+
+------------------------------------------------------------------------
+
+x :: QuasiQuoter
+x = QuasiQuoter {
+  quoteExp = text0OperationExp,
+  quotePat = const $ error "No quotePat defined for JSONOperation quasiquoter",
+  quoteType = const $ error "No quoteType defined for JSONOperation quasiquoter",
+  quoteDec = const $ error "No quoteDec defined for JSONOperation quasiquoter"
+}
+
+text0OperationExp :: String -> ExpQ
+text0OperationExp txt =
+  case eitherDecode $ BS8.pack txt of
+    Left err -> error $ "Error in aesonExp: " ++ show err
+    Right (val :: [SingleText0Operation]) -> lift $ T0 val

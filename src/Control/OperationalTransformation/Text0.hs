@@ -73,11 +73,8 @@ wrapList (a, b) = ([a], [b])
 len = T.length
 
 -- In transform', p1 <= p2 guaranteed
-transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2) | p1 == p2
-  = Right (T0 [op1], T0 [TextInsert (p2 + (len s1)) s2])
--- Default behavior
 transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2)
-  = Right (T0 [op1], T0 [TextInsert (p1 + p2) s2])
+  = Right (T0 [op1], T0 [TextInsert (p2 + (len s1)) s2])
 
 -- Insert is entirely within delete: split the delete
 -- Note that the second delete is shifted back because it is applied after the first delete
@@ -130,7 +127,7 @@ instance FromJSON SingleText0Operation where
     p <- x .: "p"
     d :: T.Text <- x .: "d"
     return $ TextDelete p d
-  parseJSON _ = fail "Couldn't parse Text0Operation"
+  parseJSON _ = fail "Couldn't parse SingleText0Operation"
 
 instance ToJSON SingleText0Operation where
   toJSON (TextInsert p s) = object [("p", A.Number $ fromIntegral p), ("i", A.String s)]
