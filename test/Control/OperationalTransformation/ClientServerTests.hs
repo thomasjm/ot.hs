@@ -9,7 +9,8 @@ import Control.OperationalTransformation.Client
 import qualified Control.OperationalTransformation.JSON ()
 import qualified Control.OperationalTransformation.JSON.Gen as JSONGen
 import Control.OperationalTransformation.Server
-import qualified Control.OperationalTransformation.Text.Gen as TextGen
+-- import qualified Control.OperationalTransformation.Text.Gen as TextGen
+import qualified Control.OperationalTransformation.Text0.Gen as Text0Gen
 import Data.Maybe (fromJust)
 import Test.QuickCheck hiding (reason)
 import Test.QuickCheck.Property
@@ -138,8 +139,13 @@ prop_client_server genOp = property $ do
 
 tests :: TestTree
 tests = testGroup "Control.OperationalTransformation.ClientServerTests" [
-  testGroup "Control.OperationalTransformation.ClientServerTests.Text" [
-      testProperty "prop_client_server" $ prop_client_server TextGen.genOperation
+  -- testGroup "Control.OperationalTransformation.ClientServerTests.Text" [
+  --     testProperty "prop_client_server" $ prop_client_server TextGen.genOperation
+  --     ],
+
+  testGroup "Control.OperationalTransformation.ClientServerTests.Text0" [
+      testProperty "prop_client_server_single_ops" $ prop_client_server Text0Gen.genOperation,
+      testProperty "prop_client_server_multi_ops" $ prop_client_server Text0Gen.genMultiOperation
       ],
 
   testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
