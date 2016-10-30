@@ -8,12 +8,13 @@ import Control.OperationalTransformation.JSON.QuasiQuote
 import Control.OperationalTransformation.Text0
 import Data.Aeson as A
 import qualified Data.Text as T
-import Test.Hspec
+import qualified Test.Hspec as H
+import Test.Hspec hiding (shouldBe)
 import Test.Tasty
-import Test.Tasty.Hspec
+import Test.Tasty.Hspec hiding (shouldBe)
 
 -- These tests are taken directly from
--- https://github.com/ottypes/json0/blob/master/test/json0.coffee
+-- https://github.com/ottypes/json0/blob/master/test/text0.coffee
 
 compose :: Text0Operation -> Text0Operation -> Text0Operation
 compose op1 op2 = case C.compose op1 op2 of
@@ -50,6 +51,9 @@ transformRight :: Text0Operation -> Text0Operation -> Text0Operation
 transformRight a b = a'
   where (_, a') = transform b a
 
+shouldBe :: (Eq a, Show a) => a -> a -> Expectation
+shouldBe = flip H.shouldBe
+
 specs :: SpecWith ()
 specs = do
   describe "compose" $ do
@@ -65,7 +69,7 @@ specs = do
       shouldBe [x|[]|] (transformLeft [x|[]|] [x|[]|])
       shouldBe [x|[]|] (transformRight [x|[]|] [x|[]|])
 
-      -- shouldBe [x|[{"i":"y", "p":100}, {"i":"x", "p":0}]|] (transformLeft [x|[{"i":"y", "p":100}, {"i":"x", "p":0}]|] [x|[]|])
+      shouldBe [x|[{"i":"y", "p":100}, {"i":"x", "p":0}]|] (transformLeft [x|[{"i":"y", "p":100}, {"i":"x", "p":0}]|] [x|[]|])
       shouldBe [x|[]|] (transformRight [x|[]|] [x|[{"i":"y", "p":100}, {"i":"x", "p":0}]|])
 
     it "inserts" $ do
@@ -82,19 +86,20 @@ specs = do
 
       shouldBe ([x|[{"p":7,"i":"ab"}]|], [x|[{"p":0,"i":"abcdef"}]|]) (transform [x|[{"p":1,"i":"ab"}]|] [x|[{"p":0,"i":"abcdef"}]|])
 
-      -- TODO: this is what the original test says, but it seems wrong...
-      -- https://github.com/ottypes/json0/blob/master/test/text0.coffee
-      -- shouldBe [x|[{"i":"x", "p":10}]|] (transformRight [x|[{"i":"x", "p":10}]|] [x|[{"d":"a", "p":10}]|])
+      shouldBe [x|[{"i":"x", "p":10}]|] (transformRight [x|[{"i":"x", "p":10}]|] [x|[{"d":"a", "p":10}]|])
 
     it "deletes" $ do
       shouldBe ([x|[{"d":"abc", "p":8}]|], [x|[{"d":"xy", "p":4}]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"xy", "p":4}]|])
       shouldBe ([x|[{"d":"ac", "p":10}]|], [x|[]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"b", "p":11}]|])
-      -- shouldBe ([x|[]|], [x|[{"d":"ac", "p":10}]|]) (transform [x|[{"d":"b", "p":11}]|] [x|[{"d":"abc", "p":10}]|])
-      -- shouldBe ([x|[{"d":"a", "p":10}]|], [x|[]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"bc", "p":11}]|])
-      -- shouldBe ([x|[{"d":"c", "p":10}]|], [x|[]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"ab", "p":10}]|])
-      -- shouldBe ([x|[{"d":"a", "p":10}]|], [x|[{"d":"d", "p":10}]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"bcd", "p":11}]|])
-      -- shouldBe ([x|[{"d":"d", "p":10}]|], [x|[{"d":"a", "p":10}]|]) (transform [x|[{"d":"bcd", "p":11}]|] [x|[{"d":"abc", "p":10}]|])
-      -- shouldBe ([x|[{"d":"abc", "p":10}]|], [x|[{"d":"xy", "p":10}]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"xy", "p":13}]|])
+      shouldBe ([x|[]|], [x|[{"d":"ac", "p":10}]|]) (transform [x|[{"d":"b", "p":11}]|] [x|[{"d":"abc", "p":10}]|])
+      shouldBe ([x|[{"d":"a", "p":10}]|], [x|[]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"bc", "p":11}]|])
+      shouldBe ([x|[{"d":"c", "p":10}]|], [x|[]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"ab", "p":10}]|])
+      shouldBe ([x|[{"d":"a", "p":10}]|], [x|[{"d":"d", "p":10}]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"bcd", "p":11}]|])
+      shouldBe ([x|[{"d":"d", "p":10}]|], [x|[{"d":"a", "p":10}]|]) (transform [x|[{"d":"bcd", "p":11}]|] [x|[{"d":"abc", "p":10}]|])
+      shouldBe ([x|[{"d":"abc", "p":10}]|], [x|[{"d":"xy", "p":10}]|]) (transform [x|[{"d":"abc", "p":10}]|] [x|[{"d":"xy", "p":13}]|])
+
+      shouldBe ([x|[{"p":1,"d":"q"},{"p":6,"d":"3"}]|], [x|[{"p":1,"i":"abcde"}]|])
+               (transform [x|[{"p":1,"d":"q3"}]|] [x|[{"p":2,"i":"abcde"}]|])
 
   -- describe "transformCursor" $ do
   --   it "is sane" $ do

@@ -79,7 +79,7 @@ transform' op1@(TextInsert p1 s1) op2@(TextInsert p2 s2)
 -- Insert is entirely within delete: split the delete
 -- Note that the second delete is shifted back because it is applied after the first delete
 transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p2 < p1 + len s1
-  = Right (T0 [TextDelete p1 (T.take (p2 - p1) s1), TextDelete (p1 + (len s1) - (p2 - p1)) (T.drop (p2 - p1) s1)],
+  = Right (T0 [TextDelete p1 (T.take (p2 - p1) s1), TextDelete (p1 + (len s2)) (T.drop (p2 - p1) s1)],
            T0 [TextInsert p1 s2])
 -- Delete and insert at the same place: delete shifts forward
 transform' op1@(TextDelete p1 s1) op2@(TextInsert p2 s2) | p1 == p2
@@ -99,10 +99,13 @@ transform' op1@(TextInsert p1 s1) op2@(TextDelete p2 s2)
 transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 == p2, s1 == s2
   = Right (T0 [], T0 [])
 -- Second delete is entirely within the first delete
-transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p2 < p1 + len s1
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p2 + len s2 <= p1 + len s1
   = Right (T0 [TextDelete p1 ((T.take (p2 - p1) s1) <> (T.drop (p2 - p1 + (len s2)) s1))], T0 [])
+-- Deletes overlap
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p2 < p1 + (len s1)
+  = Right (T0 [TextDelete p1 (T.take (p2 - p1) s1)], T0 [TextDelete (p2 - (p2 - p1)) (T.drop ((len s1) - (p2 - p1)) s2)])
 -- (Default) Second delete comes after
-transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 + (len s1) < p2
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 + (len s1) <= p2
   = Right (T0 [op1], T0 [TextDelete (p2 - (len s1)) s2])
 
 transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = Right (T0 [op1], T0 [op2])

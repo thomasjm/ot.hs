@@ -82,7 +82,6 @@ specs = do
 
   describe "transform()" $ do
     it "splits deletes" $ do
-      -- This is going to be very, very aggravating because the result isn't a single JSONOp
       shouldBe' [l|[{"p":[0], "sd":"a"}, {"p":[1], "sd":"b"}]|] (transformLeft [l|[{"p":[0], "sd":"ab"}]|] [l|[{"p":[1], "si":"x"}]|])
 
     it "cancels out other deletes" $ do

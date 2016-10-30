@@ -23,8 +23,12 @@ prop_operations_compose genOp = property $ do
   op1 <- genOp document
   op2 <- genOp document
 
-  let Right doc1 = apply op1 document
-  let Right doc2 = apply op2 document
+  let doc1 = case apply op1 document of
+        Left err -> error [i|Couldn't apply #{op1} to #{document}|]
+        Right doc -> doc
+  let doc2 = case apply op2 document of
+        Left err -> error [i|Couldn't apply #{op2} to #{document}|]
+        Right doc -> doc
 
   let Right (op1', op2') = transform op1 op2
 
@@ -44,12 +48,17 @@ op2' = #{op2'}
 doc1' = #{doc1'}
 doc2' = #{doc2'}|] }
 
+
+
+
+
 jsonTests = testGroup "Control.OperationalTransformation.CompositionTests.JSON" [
   testProperty "prop_operations_compose" $ prop_operations_compose JSONGen.genOperation
   ]
 
 textTests = testGroup "Control.OperationalTransformation.CompositionTests.Text0" [
-  testProperty "prop_operations_compose" $ prop_operations_compose Text0Gen.genOperation
+  testProperty "prop_operations_compose_single" $ prop_operations_compose Text0Gen.genOperation,
+  testProperty "prop_operations_compose_multi" $ prop_operations_compose Text0Gen.genMultiOperation
   ]
 
 jsonMain :: IO ()

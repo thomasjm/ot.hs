@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Control.OperationalTransformation.Text0.Gen (genOperation) where
+module Control.OperationalTransformation.Text0.Gen (genOperation, genMultiOperation) where
 
+import Control.OperationalTransformation
 import Control.OperationalTransformation.Text0
 import qualified Data.Text as T
 import Test.QuickCheck hiding (Result)
@@ -21,6 +22,18 @@ genOperation s = oneof [
     (elements [i1 .. (T.length s)]) >>= \i2 ->
       return $ T0 [TextDelete i1 (T.take (i2 - i1) $ T.drop i1 s)]
   ]
+
+genMultiOperation :: T.Text -> Gen Text0Operation
+genMultiOperation s = do
+  n <- elements [2..10]
+  genMultiOperation' n s (T0 [])
+
+genMultiOperation' :: Int -> T.Text -> Text0Operation -> Gen Text0Operation
+genMultiOperation' 0 doc ops = return ops
+genMultiOperation' n doc (T0 ops) = do
+  op@(T0 [singleOp]) <- genOperation doc
+  let Right doc' = apply op doc
+  genMultiOperation' (n - 1) doc' (T0 (ops ++ [singleOp]))
 
 
 -- | Random strings are ordered sequences of lowercase letters
