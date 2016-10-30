@@ -44,6 +44,9 @@ invertOperation = undefined
 isBlank (TextInsert _ s) = s == ""
 isBlank (TextDelete _ s) = s == ""
 
+getPathFromSingleton (T0 [op@(TextInsert p _)]) = (p, op)
+getPathFromSingleton (T0 [op@(TextDelete p _)]) = (p, op)
+
 
 instance OTOperation Text0Operation where
   transform (T0 []) x = Right (T0 [], x)
@@ -53,32 +56,23 @@ instance OTOperation Text0Operation where
   transform (T0 [op1]) (T0 [op2]) | isBlank op2 = Right (T0 [op1], T0 [])
   transform (T0 [op1]) (T0 [op2]) | isBlank op2 && isBlank op2 = Right (T0 [], T0 [])
 
-  transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
-  transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) = transform' op1 op2
-
-  transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
-  transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextInsert p2 s2)]) = transform' op1 op2
-
-  transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
-  transform (T0 [op1@(TextInsert p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) = transform' op1 op2
-
-  transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
-  transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) = transform' op1 op2
+  transform (getPathFromSingleton -> (p1, op1)) (getPathFromSingleton -> (p2, op2)) | p1 > p2 = rev <$> transform' op2 op1
+  transform (getPathFromSingleton -> (_, op1)) (getPathFromSingleton -> (_, op2)) = transform' op1 op2
 
   -- This is just copying the generic logic from Control.OperationalTransformation
-  transform (T0 ops1) (T0 ops2) = (\(x, y) -> (T0 x, T0 y)) <$> transformList2 ops1 ops2
-    where
-      transformList1 o [] = return (o, [])
-      transformList1 o (p:ps) = do
-        (T0 [o'], T0 [p']) <- transform (T0 [o]) (T0 [p])
-        (o'', ps') <- transformList1 o' ps
-        return (o'', p':ps')
+  -- transform (T0 ops1) (T0 ops2) = (\(x, y) -> (T0 x, T0 y)) <$> transformList2 ops1 ops2
+  --   where
+  --     transformList1 o [] = return (o, [])
+  --     transformList1 o (p:ps) = do
+  --       (T0 [o'], T0 [p']) <- transform (T0 [o]) (T0 [p])
+  --       (o'', ps') <- transformList1 o' ps
+  --       return (o'', p':ps')
 
-      transformList2 [] ps = return ([], ps)
-      transformList2 (o:os) ps = do
-        (o', ps') <- transformList1 o ps
-        (os', ps'') <- transformList2 os ps'
-        return (o':os', ps'')
+  --     transformList2 [] ps = return ([], ps)
+  --     transformList2 (o:os) ps = do
+  --       (o', ps') <- transformList1 o ps
+  --       (os', ps'') <- transformList2 os ps'
+  --       return (o':os', ps'')
 
 
 rev (a, b) = (b, a)
