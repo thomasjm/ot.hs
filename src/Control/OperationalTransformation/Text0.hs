@@ -65,6 +65,21 @@ instance OTOperation Text0Operation where
   transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) | p1 > p2 = rev <$> transform' op2 op1
   transform (T0 [op1@(TextDelete p1 s1)]) (T0 [op2@(TextDelete p2 s2)]) = transform' op1 op2
 
+  -- This is just copying the generic logic from Control.OperationalTransformation
+  transform (T0 ops1) (T0 ops2) = (\(x, y) -> (T0 x, T0 y)) <$> transformList2 ops1 ops2
+    where
+      transformList1 o [] = return (o, [])
+      transformList1 o (p:ps) = do
+        (T0 [o'], T0 [p']) <- transform (T0 [o]) (T0 [p])
+        (o'', ps') <- transformList1 o' ps
+        return (o'', p':ps')
+
+      transformList2 [] ps = return ([], ps)
+      transformList2 (o:os) ps = do
+        (o', ps') <- transformList1 o ps
+        (os', ps'') <- transformList2 os ps'
+        return (o':os', ps'')
+
 
 rev (a, b) = (b, a)
 
