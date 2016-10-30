@@ -150,3 +150,7 @@ tests = testGroup "Control.OperationalTransformation.ClientServerTests" [
 
 main :: IO ()
 main = defaultMain tests
+
+mainJSON = defaultMain $ testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
+  testProperty "prop_client_server" $ prop_client_server JSONGen.genOperation
+  ]

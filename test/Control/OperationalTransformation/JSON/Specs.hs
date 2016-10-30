@@ -86,7 +86,7 @@ specs = do
       shouldBe' [l|[{"p":[0], "sd":"a"}, {"p":[1], "sd":"b"}]|] (transformLeft [l|[{"p":[0], "sd":"ab"}]|] [l|[{"p":[1], "si":"x"}]|])
 
     it "cancels out other deletes" $ do
-      shouldBe' [s|{}|] (transformLeft [s|{"p":["k", 5], "sd":"a"}|] [s|{"p":["k", 5], "sd":"a"}|])
+      shouldBe' [l|[]|] (transformLeft [s|{"p":["k", 5], "sd":"a"}|] [s|{"p":["k", 5], "sd":"a"}|])
 
     it "does not throw errors with blank inserts" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p": ["k", 5], "si":""}|] [s|{"p": ["k", 3], "si": "a"}|])

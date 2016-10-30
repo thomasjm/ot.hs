@@ -7,7 +7,6 @@ module Control.OperationalTransformation.JSON.Transform where
 import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON.Affects
 import qualified Control.OperationalTransformation.JSON.Apply as Ap
-import Control.OperationalTransformation.JSON.QuasiQuote
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Control.OperationalTransformation.Text0
@@ -17,8 +16,8 @@ import Data.String.Interpolate.IsString
 
 invertOperation = error "invertOperation not implemented"
 
-op1 = [s|{"p":[0],"ld":"x","li":"y"}|]
-op2 = [s|{"p":[0],"ld":"x"}|]
+op1 = StringDelete [] 4 "efghijklmnop"
+op2 = StringInsert [] 12 "abcdefg"
 foo = affects -- Just to avoid warning that the import is unused
 
 ----------------------------------------------------------------------------------
@@ -160,9 +159,6 @@ transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key
 -- On simultaneous list replaces, the left one wins
 transformDouble op1@(ListReplace path1 key1 old1 new1) op2@(ListReplace path2 key2 old2 new2)
   | (path1 == path2) && (key1 == key2) = Right (ListReplace path1 key1 new2 new1, Identity)
-
-transformDouble sd1@(StringDelete {}) sd2@(StringDelete {}) |
-  sd1 == sd2 = Right (Identity, Identity)
 
 -- ListMove/ListMove: fall back to special logic
 transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2

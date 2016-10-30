@@ -8,10 +8,9 @@ module Control.OperationalTransformation.Text.Gen
 
 import Control.OperationalTransformation.Properties (ArbitraryFor (..))
 import Control.OperationalTransformation.Text
+import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Test.QuickCheck hiding (Result)
-
-import Data.Monoid ((<>))
 
 genOperation' :: Int -> Gen TextOperation
 genOperation' = fmap TextOperation . gen

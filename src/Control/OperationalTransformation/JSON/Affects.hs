@@ -83,8 +83,10 @@ affects (ObjectReplace path1 (Just key) old new) (getPath -> path2) = (path1 ++ 
 affects (ObjectReplace path1 Nothing old new) (getPath -> path2) = path1 `isPrefixOf` path2
 
 -- String*/String*
-affects (StringInsert path1 pos1 s1) (StringInsert path2 pos2 s2) = pos1 <= pos2
-affects (StringDelete path1 pos1 s1) (StringDelete path2 pos2 s2) = pos1 <= pos2
+affects (StringInsert path1 pos1 s1) (StringInsert path2 pos2 s2) = path1 == path2 && pos1 <= pos2
+affects (StringInsert path1 pos1 s1) (StringDelete path2 pos2 s2) = path1 == path2 && pos1 <= pos2
+affects (StringDelete path1 pos1 s1) (StringInsert path2 pos2 s2) = path1 == path2 && pos1 <= pos2
+affects (StringDelete path1 pos1 s1) (StringDelete path2 pos2 s2) = path1 == path2 && pos1 <= pos2
 
 -- A string or subtype operation affects a list delete only if it touches the string being deleted
 -- TODO: collapse this into a single case

@@ -3,6 +3,7 @@
 module Control.OperationalTransformation.JSON.Util where
 
 import Control.OperationalTransformation.JSON.Types
+import Control.OperationalTransformation.Text0
 import Data.Aeson as A
 import Data.String.Interpolate.IsString
 
@@ -124,6 +125,10 @@ isListInsert _ = False
 isListMove (ListMove {}) = True
 isListMove _ = False
 
+isStringOp (StringInsert {}) = True
+isStringOp (StringDelete {}) = True
+isStringOp _ = False
+
 replaceIndex obj at newIndex = setFullPath path' obj where
   path = getFullPath obj
   path' = (take at path) ++ [Pos newIndex] ++ (drop (at + 1) path)
@@ -168,3 +173,16 @@ d jsonValue = op
 --     Success (op1 :: JSONOp) = fromJSON val1
 --     Success (op2 :: JSONOp) = fromJSON val2
 --     Right (JSONOperation [op1'], JSONOperation [op2']) = C.transform (JSONOperation [op1]) (JSONOperation [op2])
+
+toText0Operation :: JSONOp -> Text0Operation
+toText0Operation (StringInsert path i val) = T0 [TextInsert i val]
+toText0Operation (StringDelete path i val) = T0 [TextDelete i val]
+toText0Operation _ = error "Can't convert this op to Text0Operation"
+
+toJSONOp :: Path -> SingleText0Operation -> JSONOp
+toJSONOp path (TextInsert i val) = StringInsert path i val
+toJSONOp path (TextDelete i val) = StringDelete path i val
+toJSONOp _ op = error [i|Can't convert this op to JSONOp: #{op}|]
+
+toJSONOperation :: Path -> Text0Operation -> JSONOperation
+toJSONOperation path (T0 ops) = JSONOperation (map (toJSONOp path) ops)

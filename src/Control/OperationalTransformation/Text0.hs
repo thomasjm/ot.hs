@@ -108,7 +108,7 @@ transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p2 < p1 + len s1
 transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) | p1 + (len s1) < p2
   = Right (T0 [op1], T0 [TextDelete (p2 - (len s1)) s2])
 
-transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = error "Not implemented"
+transform' op1@(TextDelete p1 s1) op2@(TextDelete p2 s2) = Right (T0 [op1], T0 [op2])
 
 
 instance OTSystem T.Text Text0Operation where
