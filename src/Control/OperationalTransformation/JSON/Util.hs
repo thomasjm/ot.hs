@@ -104,7 +104,7 @@ instance HasFullPath JSONOp where
   getFullPath x = error $ "getFullPath undefined for: " ++ show x
 
   setFullPath path' (StringInsert _ x y) = StringInsert path' x y
-  setFullPath path' (StringDelete _ x y) = StringInsert path' x y
+  setFullPath path' (StringDelete _ x y) = StringDelete path' x y
   setFullPath path' (ApplySubtypeOperation _ x y) = ApplySubtypeOperation path' x y
 
   setFullPath [] obj = error [i|Trying to set full path empty on object #{obj}|]

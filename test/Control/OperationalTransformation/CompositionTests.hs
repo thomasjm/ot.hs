@@ -71,6 +71,9 @@ document = #{encodePretty document}
 op1 = #{encode op1}
 op2 = #{encode op2}
 
+doc1 = #{encode doc1}
+doc2 = #{encode doc2}
+
 op1' = #{encode op1'}
 op2' = #{encode op2'}
 
