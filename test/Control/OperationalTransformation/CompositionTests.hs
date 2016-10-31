@@ -50,16 +50,26 @@ Err: #{err}|]
         Right (op1', op2') -> (op1', op2')
 
   let doc1' = case apply op2' doc1 of
-        Left err -> error [i|(4) Couldn't apply
-#{encode op2'} to
-#{encodePretty doc1}
+        Left err -> error [i|(4) Couldn't apply op2':
+document = #{encodePretty document}
+
+op1 = #{encode op1}
+op2 = #{encode op2}
+
+doc1 = #{encode doc1}
+op2' = #{encode op2'}
 
 Err: #{err}|]
         Right doc -> doc
   let doc2' = case apply op1' doc2 of
-        Left err -> error [i|(5) Couldn't apply
-#{encode op1'} to
-#{encodePretty doc2}
+        Left err -> error [i|(5) Couldn't apply op1':
+document = #{encodePretty document}
+
+op1 = #{encode op1}
+op2 = #{encode op2}
+
+doc2 = #{encode doc2}
+op1' = #{encode op1'}
 
 Err: #{err}|]
         Right doc -> doc
@@ -85,7 +95,8 @@ doc2' = #{encodePretty doc2'}|] }
 
 
 jsonTests = testGroup "Control.OperationalTransformation.CompositionTests.JSON" [
-  testProperty "prop_operations_compose" $ prop_operations_compose JSONGen.genOperation
+  testProperty "prop_operations_compose_single" $ prop_operations_compose JSONGen.genOperation,
+  testProperty "prop_operations_compose_multi" $ prop_operations_compose JSONGen.genMultiOperation
   ]
 
 textTests = testGroup "Control.OperationalTransformation.CompositionTests.Text0" [

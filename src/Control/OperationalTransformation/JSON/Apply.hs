@@ -51,20 +51,20 @@ stringDelete haystack pos needle = beginning <> (T.drop (T.length needle) rest)
 apply :: JSONOp -> A.Value -> Either String A.Value
 apply Identity input = Right input
 
-apply (Add path n) input = case input ^? (numberAtPath path) of
-  Nothing -> Left "Couldn't find number in Add"
+apply op@(Add path n) input = case input ^? (numberAtPath path) of
+  Nothing -> Left [i|Couldn't find number in Add #{op} (#{input})|]
   Just x -> Right $ set (numberAtPath path) ((fromIntegral n) + x) input
 
-apply (ListInsert path pos value) input = case input ^? (listAtPath path) of
-  Nothing -> Left "Couldn't find list in ListInsert"
+apply op@(ListInsert path pos value) input = case input ^? (listAtPath path) of
+  Nothing -> Left [i|Couldn't find list in ListInsert #{op} (#{input})|]
   Just l -> Right $ set (listAtPath path) (vectorInsert l pos value) input
 
-apply (ListDelete path pos value) input = case input ^? (listAtPath path) of
-  Nothing -> Left "Couldn't find list in ListDelete"
+apply op@(ListDelete path pos value) input = case input ^? (listAtPath path) of
+  Nothing -> Left [i|Couldn't find list in ListDelete #{op} (#{input})|]
   Just l -> Right $ set (listAtPath path) (vectorDelete l pos value) input
 
-apply (ListReplace path pos old new) input = case input ^? (listAtPath path) of
-  Nothing -> Left "Couldn't find list in ListReplace"
+apply op@(ListReplace path pos old new) input = case input ^? (listAtPath path) of
+  Nothing -> Left [i|Couldn't find list in ListReplace #{op} (#{input})|]
   Just _ -> Right $ set ((pathToTraversal path) . (nth pos)) new input
 
 -- TODO
@@ -72,14 +72,14 @@ apply (ListMove path pos1 pos2) input = case input ^? (listAtPath path) of
   Nothing -> Left [i|Couldn't find list at path #{show path} in ListMove|]
   Just l -> Right $ set (listAtPath path) (vectorMove l pos1 pos2) input
 
-apply (ObjectInsert path (Just k) value) input = case input ^? (objectAtPath path) of
-  Nothing -> Left "Couldn't find object in ObjectInsert"
+apply op@(ObjectInsert path (Just k) value) input = case input ^? (objectAtPath path) of
+  Nothing -> Left [i|Couldn't find object ObjectInsert #{op} (#{input})|]
   Just _ -> Right $ set ((objectAtPath path) . (at k)) (Just value) input
 apply (ObjectInsert _ Nothing value) _ = Right value
 
 -- TODO: assert value matches
-apply (ObjectDelete path (Just k) _value) input = case input ^? (objectAtPath path) of
-  Nothing -> Left "Couldn't find object in ObjectInsert"
+apply op@(ObjectDelete path (Just k) _value) input = case input ^? (objectAtPath path) of
+  Nothing -> Left [i|Couldn't find object in ObjectDelete #{op} (#{input}))|]
   Just _ -> Right $ set ((objectAtPath path) . (at k)) Nothing input
 -- TODO: assert value matches
 apply (ObjectDelete _ Nothing _) _ = Right A.Null
@@ -89,8 +89,8 @@ apply (ObjectReplace path (Just k) _old new) input = Right $ set ((pathToTravers
 -- TODO: assert old matches
 apply (ObjectReplace path Nothing _old new) input = Right new
 
-apply (ApplySubtypeOperation path typ op) input = case input ^? stringAtPath path of
-  Nothing -> Left "Couldn't find text in ApplySubtypeOperation"
+apply operation@(ApplySubtypeOperation path typ op) input = case input ^? stringAtPath path of
+  Nothing -> Left [i|Couldn't find text in ApplySubtypeOperation #{operation} (#input)|]
   Just t -> case OT.apply op t of
     Left err -> Left err
     Right result -> Right $ set (stringAtPath path) result input

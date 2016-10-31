@@ -3,9 +3,11 @@
 {-# LANGUAGE MultiParamTypeClasses, OverloadedStrings #-}
 
 module Control.OperationalTransformation.JSON.Gen
-  ( genOperation
+  ( genOperation, genMultiOperation
   ) where
 
+import Control.OperationalTransformation
+import Control.OperationalTransformation.JSON
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.Properties (ArbitraryFor (..))
 import qualified Data.Aeson as A
@@ -30,6 +32,19 @@ instance Arbitrary A.Value where
 
 instance Arbitrary JSONOp where
   arbitrary = arbitrary >>= genOp
+
+
+genMultiOperation :: A.Value -> Gen JSONOperation
+genMultiOperation s = do
+  n <- elements [2..10]
+  genMultiOperation' n s (JSONOperation [])
+
+genMultiOperation' :: Int -> A.Value -> JSONOperation -> Gen JSONOperation
+genMultiOperation' 0 doc ops = return ops
+genMultiOperation' n doc (JSONOperation ops) = do
+  op@(JSONOperation [singleOp]) <- genOperation doc
+  let Right doc' = apply op doc
+  genMultiOperation' (n - 1) doc' (JSONOperation (ops ++ [singleOp]))
 
 
 genOperation :: A.Value -> Gen JSONOperation

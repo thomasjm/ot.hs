@@ -26,22 +26,6 @@ invertOperation = undefined
 
 j x = JSONOperation [x]
 
--- * Functions for doing the N^2 operation of transforming two JSONOperations by rebasing the
--- individual operations on each other. Note that this is inefficient at the moment, because it
--- throws away results from transform' that it has to recompute later.
-transformRightOp :: JSONOperation -> JSONOperation -> Either String JSONOperation
-transformRightOp (JSONOperation [rightOp]) (JSONOperation [leftOp]) = snd <$> transform' leftOp rightOp
-
-transformRightOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
-transformRightOnes leftOps rightOps = (normalize . mconcat) <$> (sequence [foldM transformRightOp (j rightOp) (fmap j leftOps) | rightOp <- rightOps])
-
-transformLeftOp :: JSONOperation -> JSONOperation -> Either String JSONOperation
-transformLeftOp (JSONOperation [leftOp]) (JSONOperation [rightOp]) = fst <$> transform' leftOp rightOp
-
-transformLeftOnes :: [JSONOp] -> [JSONOp] -> Either String JSONOperation
-transformLeftOnes leftOps rightOps = (normalize . mconcat) <$> (sequence [foldM transformLeftOp (j leftOp) (fmap j rightOps) | leftOp <- leftOps])
-
-
 -- * Normalize a JSONOperation
 -- For now, this will just filter out identity ops
 -- It could also potentially merge composable things
@@ -56,7 +40,24 @@ instance Monoid JSONOperation where
 
 instance OTOperation JSONOperation where
   transform (JSONOperation [op1]) (JSONOperation [op2]) = transform' op1 op2
-  transform (JSONOperation leftOps) (JSONOperation rightOps) = (, ) <$> (transformLeftOnes leftOps rightOps) <*> (transformRightOnes leftOps rightOps)
+  transform (JSONOperation ops1) (JSONOperation ops2) = (\(x, y) -> (JSONOperation x, JSONOperation y)) <$> transformList2 ops1 ops2
+
+
+-- TODO: unify this transform logic with Text0, where it's identical
+transformList1 :: JSONOp -> [JSONOp] -> Either String ([JSONOp], [JSONOp])
+transformList1 o [] = return ([o], [])
+transformList1 o (p:ps) = do
+  (JSONOperation o', JSONOperation p') <- transform (JSONOperation [o]) (JSONOperation [p])
+  (o'', ps') <- transformList2 o' ps
+  return (o'', p' ++ ps')
+
+transformList2 :: [JSONOp] -> [JSONOp] -> Either String ([JSONOp], [JSONOp])
+transformList2 [] ps = return ([], ps)
+transformList2 (o:os) ps = do
+  (o', ps') <- transformList1 o ps
+  (os', ps'') <- transformList2 os ps'
+  return (o' ++ os', ps'')
+
 
 -- Handle identities up front
 transform' :: JSONOp -> JSONOp -> Either String (JSONOperation, JSONOperation)
