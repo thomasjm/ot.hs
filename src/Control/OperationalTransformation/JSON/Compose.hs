@@ -23,6 +23,7 @@ compose (JSONOperation [op1]) (JSONOperation [op2]) = case compose' op1 op2 of
 compose (JSONOperation ops1) (JSONOperation ops2) = Right $ JSONOperation $ ops1 ++ ops2
 
 
+compose' :: JSONOp -> JSONOp -> Either String [JSONOp]
 compose' (Add path1 n1) (Add path2 n2) | path1 == path2 = Right [Add path1 (n1 + n2)]
 
 -- List insert and delete cancel out

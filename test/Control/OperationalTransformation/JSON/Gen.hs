@@ -69,7 +69,7 @@ genOp' (A.Array v) path = oneof $ [
   -- Operations if the list is non-empty
   ++ (if (not $ V.null v) then [
          -- Recurse
-         (elements [0 .. ((V.length v) - 1)]) >>= \i -> genOp' (A.Array v) (path ++ [Pos i]),
+         (elements [0 .. ((V.length v) - 1)]) >>= \i -> genOp' (v V.! i) (path ++ [Pos i]),
 
          -- Delete an item from the list
          (elements [0 .. ((V.length v) - 1)]) >>= \i -> return $ ListDelete path i (v V.! i),

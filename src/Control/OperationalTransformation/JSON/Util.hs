@@ -118,6 +118,8 @@ instance HasFullPath JSONOp where
   setFullPath path' (ListReplace _ _ y z) = ListReplace (init path') (unPos $ last path') y z
   setFullPath path' (ListMove _ _ y) = ListMove (init path') (unPos $ last path') y
 
+  setFullPath path' (Add path x) = Add path' x
+
   setFullPath _ x = error [i|setFullPath undefined for #{x}|]
 
 
