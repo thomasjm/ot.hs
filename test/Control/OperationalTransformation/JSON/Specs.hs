@@ -299,8 +299,14 @@ specs = do
       shouldBe' [s|{"p":[0], "ld":{}}|] (transformRight [s|{"p":[0], "lm":1}|] [s|{"p":[1], "ld":{}}|])
 
       shouldBe' [s|{"p":[0], "ld":1, "li":2}|] (transformLeft [s|{"p":[1], "ld":1, "li":2}|] [s|{"p":[1], "lm":0}|])
+      shouldBe' [s|{"p":[1], "lm":0}|] (transformRight [s|{"p":[1], "ld":1, "li":2}|] [s|{"p":[1], "lm":0}|])
+
       shouldBe' [s|{"p":[0], "ld":2, "li":3}|] (transformLeft [s|{"p":[1], "ld":2, "li":3}|] [s|{"p":[0], "lm":1}|])
+      shouldBe' [s|{"p":[0], "lm":1}|] (transformRight [s|{"p":[1], "ld":2, "li":3}|] [s|{"p":[0], "lm":1}|])
+
       shouldBe' [s|{"p":[1], "ld":3, "li":4}|] (transformLeft [s|{"p":[0], "ld":3, "li":4}|] [s|{"p":[1], "lm":0}|])
+      shouldBe' [s|{"p":[1], "lm":0}|] (transformRight [s|{"p":[0], "ld":3, "li":4}|] [s|{"p":[1], "lm":0}|])
+
 
     it "li vs lm" $ do
       let li = \(p :: Int) -> JSONOperation [ListInsert [] p [v|[]|]]

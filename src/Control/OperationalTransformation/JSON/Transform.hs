@@ -95,6 +95,9 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
 -- ListReplace/ListDelete: a list replace on the same index as a list delete turns into a list insert
 transformRight op1@(ListReplace path1 index1 _ _) op2@(ListDelete path2 index2 item)
   | (getFullPath op1) == (getFullPath op2) = Right $ ListInsert path2 index2 item
+-- ListReplace/ListMove: a list replace on the same index as a list move leaves the move unchanged (since the replace will move instead)
+transformRight op1@(ListReplace path1 index1 _ _) op2@(ListMove path2 from to)
+  | (getFullPath op1) == (getFullPath op2) = Right op2
 -- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
 transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
   | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
