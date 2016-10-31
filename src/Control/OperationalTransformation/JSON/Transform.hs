@@ -92,9 +92,9 @@ transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPa
        | True -> Right op2
 
 
--- ListReplace/ListDelete: a list replace on the same index as a list delete turns into a list insert
+-- ListReplace/ListDelete: a replace affecting a delete turns the delete into a no-op
 transformRight op1@(ListReplace path1 index1 _ _) op2@(ListDelete path2 index2 item)
-  | (getFullPath op1) == (getFullPath op2) = Right $ ListInsert path2 index2 item
+  | (getFullPath op1) == (getFullPath op2) = Right Identity
 -- ListReplace/ListMove: a list replace on the same index as a list move leaves the move unchanged (since the replace will move instead)
 transformRight op1@(ListReplace path1 index1 _ _) op2@(ListMove path2 from to)
   | (getFullPath op1) == (getFullPath op2) = Right op2
@@ -102,16 +102,16 @@ transformRight op1@(ListReplace path1 index1 _ _) op2@(ListMove path2 from to)
 transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
   | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
 
--- A delete on the same key creates a no-op
+-- ObjectDelete/ObjectDelete: a delete on the same key creates a no-op
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectDelete path2 key2 value2)
   | path1 == path2 && key1 == key2 = Right Identity
--- A delete affecting a replace turns the replace into an insert
+-- ObjectDelete/ObjectReplace: a delete affecting a replace turns the replace into an insert
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
   | getFullPath op1 == getFullPath op2 = Right $ ObjectInsert path1 key1 new2
--- A replace affecting a delete turns the delete into a no-op
+-- ObjectReplace/ObjectDelete: a replace affecting a delete turns the delete into a no-op
 transformRight op1@(ObjectReplace path1 key1 old1 new1) op2@(ObjectDelete path2 key2 value2)
   | (getFullPath op1) `isPrefixOf` (getFullPath op2) = Right Identity
--- Otherwise, an operation that affects a replace or delete means we need to change what's removed
+-- (ObjectReplace,ObjectDelete,ListDelete)/Anything: an operation that affects a replace or delete means we need to change what's removed
 transformRight op1 op2@(ObjectReplace path key old new) =
   (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 transformRight op1 op2@(ObjectDelete path key old) =

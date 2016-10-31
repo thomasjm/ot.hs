@@ -232,6 +232,7 @@ specs = do
 
     it "replacement vs. deletion" $ do
       shouldBe' [s|{"p":[0], "li":"y"}|] (transformRight [s|{"p":[0], "ld":"x"}|] [s|{"p":[0], "ld":"x", "li":"y"}|])
+      shouldBe' [s|{}|] (transformLeft [s|{"p":[0], "ld":"x"}|] [s|{"p":[0], "ld":"x", "li":"y"}|])
 
     it "replacement vs. insertion" $ do
       shouldBe' [s|{"p":[1], "ld":{}, "li":"brillig"}|] (transformLeft [s|{"p":[0], "ld":{}, "li":"brillig"}|] [s|{"p":[0], "li":36}|])
