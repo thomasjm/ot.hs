@@ -24,6 +24,7 @@ Library
   Exposed-modules:     Control.OperationalTransformation
                      , Control.OperationalTransformation.List
                      , Control.OperationalTransformation.Text
+                     , Control.OperationalTransformation.Text0
                      , Control.OperationalTransformation.Selection
                      , Control.OperationalTransformation.Properties
                      , Control.OperationalTransformation.Client
