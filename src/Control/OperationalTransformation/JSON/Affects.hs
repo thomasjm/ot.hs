@@ -5,6 +5,7 @@ module Control.OperationalTransformation.JSON.Affects where
 
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
+import Data.Aeson
 import Data.List
 import Data.String.Interpolate.IsString
 
@@ -16,7 +17,9 @@ import Data.String.Interpolate.IsString
 -- In either case, returns the index in the list pointed to by listPath
 getIndexInList listPath op | (length listPath) < (length path) = unPos (path !! (length listPath))
   where path = getFullPath op
-getIndexInList x y = error [i|Failed to getIndexInList (this shouldn't happen): #{show x}, #{show y}|]
+getIndexInList listPath op = error [i|Failed to getIndexInList (this shouldn't happen):
+list = #{encode listPath},
+op = #{encode op}|]
 
 -- Define x `affects` y if operation x affects operation y
 affects :: JSONOp -> JSONOp -> Bool

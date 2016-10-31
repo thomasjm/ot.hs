@@ -398,6 +398,10 @@ specs = do
       shouldBe' [s|{}|] (transformLeft [s|{"p":[], "od":"foo"}|] [s|{"p":[], "od": "foo", "oi": 42}|])
 
     it "replacement vs. replacement" $ do
+      -- Tie break: with replacements on the same key, the left one wins
+      shouldBe' [s|{"p":["baz219"],"oi":"win","od":"lose"}|] (transformLeft [s|{"p":["baz219"],"oi":"win","od":"old"}|] [s|{"p":["baz219"],"oi":"lose","od":"old"}|])
+      shouldBe' [s|{}|] (transformRight [s|{"p":["baz219"],"oi":"win","od":"old"}|] [s|{"p":["baz219"],"oi":"lose","od":"old"}|])
+
       shouldBe' [l|[]|] (transformRight [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|])
       shouldBe' [l|[{"p":[], "od":null,"oi":{}}]|] (transformLeft [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])
       -- shouldBe' [l|[]|] (transformRight' [l|[{"p":[], "od":[""],"oi":null}]|] [l|[{"p":[], "od":[""],"oi":{}}]|])

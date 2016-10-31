@@ -158,6 +158,10 @@ transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key
 transformDouble op1@(ListReplace path1 key1 old1 new1) op2@(ListReplace path2 key2 old2 new2)
   | (path1 == path2) && (key1 == key2) = Right (ListReplace path1 key1 new2 new1, Identity)
 
+-- On simultaneous object replaces, the left one wins
+transformDouble op1@(ObjectReplace path1 key1 old1 new1) op2@(ObjectReplace path2 key2 old2 new2)
+  | (path1 == path2) && (key1 == key2) = Right (ObjectReplace path1 key1 new2 new1, Identity)
+
 -- ListMove/ListMove: fall back to special logic
 transformDouble op1@(ListMove path1 otherFrom otherTo) op2@(ListMove path2 from to) | path1 == path2
   = Right (transformListMove LeftSide op2 op1, transformListMove RightSide op1 op2)
@@ -175,7 +179,10 @@ transformDouble x y = (, ) <$> transformRight y x <*> transformRight x y
 
 
 
-------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+--- Transform ListMove/ListMove (special case)
+----------------------------------------------------------------------------------
+
 
 data Side = LeftSide | RightSide deriving (Show, Eq)
 
