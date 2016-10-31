@@ -99,11 +99,15 @@ transformRight op1@(ListReplace path1 index1 _ _) op2@(ListDelete path2 index2 i
 transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
   | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
 
+-- A delete on the same key creates a no-op
+transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectDelete path2 key2 value2)
+  | path1 == path2 && key1 == key2 = Right Identity
 -- A delete affecting a replace turns the replace into an insert
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key2 old2 new2)
-  | getFullPath op1 == getFullPath op2
-  , value1 == old2 = Right $ ObjectInsert path1 key1 new2
-  | otherwise = error "unhandled so far :/"
+  | getFullPath op1 == getFullPath op2 = Right $ ObjectInsert path1 key1 new2
+-- A replace affecting a delete turns the delete into a no-op
+transformRight op1@(ObjectReplace path1 key1 old1 new1) op2@(ObjectDelete path2 key2 value2)
+  | (getFullPath op1) `isPrefixOf` (getFullPath op2) = Right Identity
 -- Otherwise, an operation that affects a replace or delete means we need to change what's removed
 transformRight op1 op2@(ObjectReplace path key old new) =
   (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
@@ -142,15 +146,6 @@ transformDouble (ApplySubtypeOperation path1 typ1 op1) (ApplySubtypeOperation pa
   Right (T0 [], op2') -> Right (Identity, ApplySubtypeOperation path2 typ2 op2')
   Right (op1', T0 []) -> Right (ApplySubtypeOperation path1 typ1 op1', Identity)
   Right (op1', op2') -> Right (ApplySubtypeOperation path1 typ1 op1', ApplySubtypeOperation path2 typ2 op2')
-
-transformDouble op1@(ListDelete path1 i1 value1) op2@(ListDelete path2 i2 value2)
-  | op1 /= op2 = error "Fatal: operations do not both affect each other"
-  | otherwise = Right (Identity, Identity)
-
--- ObjectDelete/ObjectDelete: we know `path1 == path2`
-transformDouble op1@(ObjectDelete _ key1 _) op2@(ObjectDelete _ key2 _)
-  | key1 == key1 = Right (Identity, Identity)
-  | otherwise = Right (op1, op2) -- deleting different keys; should just do those ops
 
 -- On simultaneous inserts, the left one wins
 transformDouble op1@(ObjectInsert path1 key1 value1) op2@(ObjectInsert path2 key2 value2) |

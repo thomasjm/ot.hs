@@ -388,6 +388,9 @@ specs = do
     it "replacement vs. deletion" $ do
       shouldBe' [s|{"p":[], "oi":{}}|] (transformRight [s|{"p":[], "od":[""]}|] [s|{"p":[], "od":[""], "oi":{}}|])
 
+      shouldBe' [s|{"p":[], "oi": 42}|] (transformRight [s|{"p":[], "od":"foo"}|] [s|{"p":[], "od": "foo", "oi": 42}|])
+      shouldBe' [s|{}|] (transformLeft [s|{"p":[], "od":"foo"}|] [s|{"p":[], "od": "foo", "oi": 42}|])
+
     it "replacement vs. replacement" $ do
       shouldBe' [l|[]|] (transformRight [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|])
       shouldBe' [l|[{"p":[], "od":null,"oi":{}}]|] (transformLeft [l|[{"p":[], "od":[""]},{"p":[],"oi":{}}]|] [l|[{"p":[], "od":[""]},{"p":[],"oi":null}]|])

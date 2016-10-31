@@ -26,6 +26,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L
 import Data.Monoid
 import qualified Data.Text as T
+import qualified Data.Vector as V
 import GHC.Generics (Generic)
 import Instances.TH.Lift ()
 import Language.Haskell.TH.Lift
@@ -156,6 +157,8 @@ instance ToJSON SingleText0Operation where
 instance OTComposableOperation Text0Operation where
   compose (T0 ops1) (T0 ops2) = Right $ T0 (ops1 ++ ops2)
 
+instance ToJSON Text0Operation where
+  toJSON (T0 ops) = A.Array $ V.fromList (fmap toJSON ops)
 
 -- |Force parse an operation. Just for REPL testing.
 parseOp :: A.Value -> Text0Operation

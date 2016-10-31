@@ -95,7 +95,7 @@ genOp' (A.Number n) path = Add path <$> arbitrary
 -- Booleans get flipped
 genOp' (A.Bool b) path@(lastMay -> Just (Pos x)) = return $ ListReplace (init path) x (A.Bool b) (A.Bool $ not b)
 genOp' (A.Bool b) path@(lastMay -> Just (Prop x)) = return $ ObjectReplace (init path) (Just x) (A.Bool b) (A.Bool $ not b)
-genOp' (A.Bool b) path@(lastMay -> Nothing) = return $ ObjectReplace (init path) Nothing (A.Bool b) (A.Bool $ not b)
+genOp' (A.Bool b) path@(lastMay -> Nothing) = return $ ObjectReplace [] Nothing (A.Bool b) (A.Bool $ not b)
 -- Nulls just get left alone
 genOp' (A.Null) path = return Identity
 --TODO: add tests of subtype operations?

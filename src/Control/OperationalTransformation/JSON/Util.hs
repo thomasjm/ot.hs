@@ -107,6 +107,8 @@ instance HasFullPath JSONOp where
   setFullPath path' (StringDelete _ x y) = StringInsert path' x y
   setFullPath path' (ApplySubtypeOperation _ x y) = ApplySubtypeOperation path' x y
 
+  setFullPath [] obj = error [i|Trying to set full path empty on object #{obj}|]
+
   setFullPath path' (ObjectInsert _ _ y) = ObjectInsert (init path') (Just $ unProp $ last path') y
   setFullPath path' (ObjectDelete _ _ y) = ObjectDelete (init path') (Just $ unProp $ last path') y
   setFullPath path' (ObjectReplace _ _ y z) = ObjectReplace (init path') (Just $ unProp $ last path') y z
