@@ -137,26 +137,28 @@ prop_client_server genOp = property $ do
       ClientSynchronized -> True
       _ -> False
 
+text0Tests = testGroup "Control.OperationalTransformation.ClientServerTests.Text0" [
+  testProperty "prop_client_server_single_ops" $ prop_client_server Text0Gen.genOperation,
+  testProperty "prop_client_server_multi_ops" $ prop_client_server Text0Gen.genMultiOperation
+  ]
+
+jsonTests = testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
+  testProperty "prop_client_server_single_ops" $ prop_client_server JSONGen.genOperation,
+  testProperty "prop_client_server_multi_ops" $ prop_client_server JSONGen.genMultiOperation
+  ]
+
+-- textTests = testGroup "Control.OperationalTransformation.ClientServerTests.Text" [
+--   testProperty "prop_client_server" $ prop_client_server TextGen.genOperation
+--   ]
+
 tests :: TestTree
 tests = testGroup "Control.OperationalTransformation.ClientServerTests" [
-  -- testGroup "Control.OperationalTransformation.ClientServerTests.Text" [
-  --     testProperty "prop_client_server" $ prop_client_server TextGen.genOperation
-  --     ],
-
-  testGroup "Control.OperationalTransformation.ClientServerTests.Text0" [
-      testProperty "prop_client_server_single_ops" $ prop_client_server Text0Gen.genOperation,
-      testProperty "prop_client_server_multi_ops" $ prop_client_server Text0Gen.genMultiOperation
-      ],
-
-  testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
-      testProperty "prop_client_server" $ prop_client_server JSONGen.genOperation
-      ]
+  jsonTests,
+  text0Tests
   ]
 
 
-main :: IO ()
+main, jsonMain, textMain :: IO ()
 main = defaultMain tests
-
-mainJSON = defaultMain $ testGroup "Control.OperationalTransformation.ClientServerTests.JSON" [
-  testProperty "prop_client_server" $ prop_client_server JSONGen.genOperation
-  ]
+jsonMain = defaultMain jsonTests
+textMain = defaultMain text0Tests
