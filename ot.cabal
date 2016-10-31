@@ -31,6 +31,7 @@ Library
                      , Control.OperationalTransformation.Server
                      , Control.OperationalTransformation.JSON
                      , Control.OperationalTransformation.JSON.Transform
+                     , Control.OperationalTransformation.JSON.Affects
                      , Control.OperationalTransformation.JSON.Apply
                      , Control.OperationalTransformation.JSON.Compose
                      , Control.OperationalTransformation.JSON.Types
