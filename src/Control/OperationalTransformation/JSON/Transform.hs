@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections, ViewPatterns, MultiWayIf #-}
+{-# LANGUAGE TupleSections, ViewPatterns, MultiWayIf, OverloadedLists #-}
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings, PatternGuards, QuasiQuotes #-}
 
 module Control.OperationalTransformation.JSON.Transform where
@@ -7,6 +7,7 @@ module Control.OperationalTransformation.JSON.Transform where
 import qualified Control.OperationalTransformation as C
 import Control.OperationalTransformation.JSON.Affects
 import qualified Control.OperationalTransformation.JSON.Apply as Ap
+-- import Control.OperationalTransformation.JSON.QuasiQuote
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Control.OperationalTransformation.Text0
@@ -14,11 +15,16 @@ import Data.List
 import Data.String.Interpolate.IsString
 
 
+
 invertOperation = error "invertOperation not implemented"
 
-op1 = StringDelete [] 4 "efghijklmnop"
-op2 = StringInsert [] 12 "abcdefg"
+getfst (JSONOperation [x]) = x
+op1 = JSONOperation [StringInsert [Pos 2] 0 "bbb"]
+op2 = JSONOperation [StringInsert [Pos 3] 0 "cccc"]
 foo = affects -- Just to avoid warning that the import is unused
+
+unsafeIndex msg l i | i < length l = l !! i
+unsafeIndex msg l index | otherwise = error $ [i|UNSAFE INDEX ERROR, IT WAS #{msg}. l = #{l}. i = #{index}|]
 
 ----------------------------------------------------------------------------------
 -- Transform right
@@ -29,8 +35,8 @@ foo = affects -- Just to avoid warning that the import is unused
 
 transformRight :: JSONOp -> JSONOp -> Either String JSONOp
 
--- ListDelete/ListMove
-transformRight op1@(ListDelete {}) op2@(ListMove path2 index21 index22) =
+-- ListDelete/ListMove on the same list
+transformRight op1@(ListDelete {}) op2@(ListMove path2 index21 index22) | path1 == path2 =
   if -- Delete of the thing being moved makes the move a no-op
      | index1 == index21 -> Right Identity
      -- Delete in the middle of the range causes the top index to go down
@@ -42,10 +48,12 @@ transformRight op1@(ListDelete {}) op2@(ListMove path2 index21 index22) =
      | otherwise -> Right op2
   where bottom = min index21 index22
         top = max index21 index22
-        Pos index1 = (getFullPath op1) !! length path2
+        path1 = getPath op1
+        path2 = getPath op2
+        Pos index1 = last (getFullPath op1)
 
--- ListInsert/ListMove
-transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index22) =
+-- ListInsert/ListMove on the same list
+transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index22) | path1 == path2 =
   if -- Insert in the middle of the range causes the top index to go up
      | path1 == path2 && bottom < index1 && index1 <= top && index22 > index21 -> Right $ ListMove path2 index21 (index22 + 1)
      | path1 == path2 && bottom < index1 && index1 <= top && index22 < index21 -> Right $ ListMove path2 (index21 + 1) index22
@@ -56,26 +64,26 @@ transformRight op1@(ListInsert path1 index1 _) op2@(ListMove path2 index21 index
   where bottom = min index21 index22
         top = max index21 index22
 
--- ListMove/ListInsert
-transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _)
-  -- on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
-  | path1 == path2 && index11 == index2 && index12 < index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
-  -- in between
-  | path1 == path2 && index11 < index2 && index2 <= index12 = Right $ replaceIndex op2 (length path1) (index2 - 1)
-  | path1 == path2 && index12 < index2 && index2 <= index11 = Right $ replaceIndex op2 (length path1) (index2 + 1)
-  -- If the ListInsert is at or before the smaller index of the ListMove, it's not affected. TODO: cover this in `affects`
-  | path1 == path2 && index2 <= (min index11 index12) = Right op2
-  -- If the ListInsert is at or after the larger index of the ListMove, it's not affected. TODO: cover this in `affects`
-  | path1 == path2 && index2 >= (max index11 index12) = Right op2
--- ListMove/Anything
-transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> x !! (length listPath1)) . getFullPath) -> Pos i)
+-- ListMove/ListInsert on the same list
+transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2 _) | path1 == path2 =
+  if -- on same index when the ListMove moves it to earlier: the ListInsert gets bumped up by 1
+     | index11 == index2 && index12 < index11 -> Right $ replaceIndex op2 (length path1) (index2 + 1)
+     -- in between
+     | index11 < index2 && index2 <= index12 -> Right $ replaceIndex op2 (length path1) (index2 - 1)
+     | index12 < index2 && index2 <= index11 -> Right $ replaceIndex op2 (length path1) (index2 + 1)
+     -- If the ListInsert is at or before the smaller index of the ListMove, it's not affected. TODO: cover this in `affects`
+     | index2 <= (min index11 index12) -> Right op2
+     -- If the ListInsert is at or after the larger index of the ListMove, it's not affected. TODO: cover this in `affects`
+     | index2 >= (max index11 index12) -> Right op2
+-- ListMove/Anything -- TODO: make this on the same list
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> unsafeIndex "B" x (length listPath1)) . getFullPath) -> Pos i)
   | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
   -- in between
   | listIndex1 <= i && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
   | listIndex2 <= i && i <= listIndex1 = Right $ replaceIndex op2 (length listPath1) (i + 1)
   | otherwise = Right op2
 
--- ListDelete/ListReplace: a delete affecting a replace turns into an insert. TODO: what if the delete is inside the replace?
+-- ListDelete/ListReplace on the same list: a delete affecting a replace turns into an insert.
 transformRight op1@(ListDelete path1 index1 value1) op2@(ListReplace path2 index2 old new)
   | path1 == path2 && index1 == index2 = Right $ ListInsert path2 index2 new
 
@@ -85,22 +93,25 @@ transformRight op1@(ListInsert listPath _ val) op2 = Right $ replaceIndexFn op2 
 -- ListDelete/ListInsert at same index: ListInsert is unchanged
 transformRight op1@(ListDelete path1 index1 val1) op2@(ListInsert path2 index2 val2)
   | getFullPath op1 == getFullPath op2 = Right op2
+
+-- ListReplace/ListDelete: a replace affecting a delete turns the delete into a no-op
+transformRight op1@(ListReplace {}) op2@(ListDelete {})
+  | (getFullPath op1) == (getFullPath op2) = Right Identity
+-- ListReplace/ListDelete: a replace affecting a delete turns the delete into a no-op
+transformRight op1@(ListDelete {}) op2@(ListDelete {})
+  | (getFullPath op1) == (getFullPath op2) = Right Identity
+-- ListReplace/ListMove: a list replace on the same index as a list move leaves the move unchanged (since the replace will move instead)
+transformRight op1@(ListReplace {}) op2@(ListMove {})
+  | (getFullPath op1) == (getFullPath op2) = Right op2
+-- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
+transformRight op1@(ListReplace {}) (getFullPath -> fullPath2)
+  | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
+
 -- ListDelete/Anything
-transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> x !! (length listPath)) . getFullPath) -> Pos i2)
+transformRight op1@(ListDelete listPath i1 val) op2@(((\x -> (safeIndex x (length listPath))) . getFullPath) -> Just (Pos i2))
   = if | i1 == i2 -> Right Identity
        | i1 < i2 -> Right $ replaceIndex op2 (length listPath) (i2 - 1)
        | True -> Right op2
-
-
--- ListReplace/ListDelete: a replace affecting a delete turns the delete into a no-op
-transformRight op1@(ListReplace path1 index1 _ _) op2@(ListDelete path2 index2 item)
-  | (getFullPath op1) == (getFullPath op2) = Right Identity
--- ListReplace/ListMove: a list replace on the same index as a list move leaves the move unchanged (since the replace will move instead)
-transformRight op1@(ListReplace path1 index1 _ _) op2@(ListMove path2 from to)
-  | (getFullPath op1) == (getFullPath op2) = Right op2
--- ListReplace/Anything: a list replace on the same index turns the other thing into a no-op
-transformRight op1@(ListReplace path1 index1 _ _) (getFullPath -> fullPath2)
-  | (getFullPath op1) `isPrefixOf` fullPath2 = Right Identity
 
 -- ObjectDelete/ObjectDelete: a delete on the same key creates a no-op
 transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectDelete path2 key2 value2)
@@ -111,13 +122,20 @@ transformRight op1@(ObjectDelete path1 key1 value1) op2@(ObjectReplace path2 key
 -- ObjectReplace/ObjectDelete: a replace affecting a delete turns the delete into a no-op
 transformRight op1@(ObjectReplace path1 key1 old1 new1) op2@(ObjectDelete path2 key2 value2)
   | (getFullPath op1) `isPrefixOf` (getFullPath op2) = Right Identity
+-- ObjectDelete/Anything: a delete affecting any operation inside the delete turns the thing into a no-op
+transformRight op1@(ObjectDelete {}) op2
+  | getFullPath op1 `isPrefixOf` getFullPath op2 = Right $ Identity
+-- ObjectReplace/Anything: a delete affecting any operation inside the replace turns the thing into a no-op
+transformRight op1@(ObjectReplace {}) op2
+  | getFullPath op1 `isPrefixOf` getFullPath op2 = Right $ Identity
+
 -- (ObjectReplace,ObjectDelete,ListDelete)/Anything: an operation that affects a replace or delete means we need to change what's removed
 transformRight op1 op2@(ObjectReplace path key old new) =
   (\old' -> ObjectReplace path key old' new) <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
 transformRight op1 op2@(ObjectDelete path key old) =
   (\old' -> ObjectDelete path key old') <$> (Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) old)
-transformRight op1 op2@(ListDelete path i value) =
-  (\value' -> ListDelete path i value') <$> Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) value
+transformRight op1 op2@(ListDelete path i2 value) =
+  (\value' -> ListDelete path i2 value') <$> Ap.apply (setPath (drop (length $ getFullPath op2) (getPath op1)) op1) value
 
 -- A delete or replace turns the other operation into a no-op
 transformRight op1@(ObjectDelete {}) op2 = Right Identity
@@ -216,3 +234,7 @@ transformListMove side (ListMove path1 otherFrom otherTo) (ListMove path2 from t
   newTo = newTo7
 
 transformListMove side op1 op2 = error [i|Invalid arguments to transformListMove: #{side}, #{op1}, #{op2}|]
+
+
+safeIndex l i | i < length l = Just $ l !! i
+safeIndex l i | otherwise = Nothing

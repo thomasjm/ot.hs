@@ -15,11 +15,20 @@ import Control.OperationalTransformation
 import Control.OperationalTransformation.JSON.Affects (affects)
 import qualified Control.OperationalTransformation.JSON.Apply as AP
 import qualified Control.OperationalTransformation.JSON.Compose as C
+import Control.OperationalTransformation.JSON.QuasiQuote
 import Control.OperationalTransformation.JSON.Transform (transformDouble, transformRight)
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.JSON.Util
 import Control.OperationalTransformation.Text0
 import qualified Data.Aeson as A
+
+
+document = [v|[{}, null, "z"]|]
+getOps (JSONOperation ops) = ops
+ops1 = getOps [l|[{"p":[2],"li":"aa"},{"p":[2,0],"si":"bbb"}]|]
+ops2 = getOps [l|[{"p":[2,0],"si":"cccc"}]|]
+o1 = JSONOperation [StringInsert [Pos 2] 0 "bbb"]
+o2 = JSONOperation [StringInsert [Pos 3] 0 "cccc"]
 
 
 invertOperation = undefined
@@ -72,7 +81,7 @@ transform' op1@(isStringOp -> True) op2@(isStringOp -> True) =
      | otherwise -> Right (j op1, j op2)
   where
     path1 = getFullPath op1
-    path2 = getFullPath op1
+    path2 = getFullPath op2
 
     op1' :: Text0Operation = toText0Operation op1
     op2' :: Text0Operation = toText0Operation op2

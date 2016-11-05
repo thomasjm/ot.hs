@@ -167,6 +167,9 @@ specs = do
       shouldBe' [s|{"p":[0], "li":"x"}|] (transformLeft [s|{"p":[0], "li":"x"}|] [s|{"p":[0], "ld":"y"}|])
       shouldBe' [s|{}|] (transformLeft [s|{"p":[0],"na":-3}|] [s|{"p":[0], "ld":48}|])
 
+      shouldBe' [s|{}|] (transformLeft [s|{"p":["baz863",2],"ld":2}|] [s|{"p":["baz863"],"od":[0,1,2,3]}|])
+      shouldBe' [s|{"p":["baz863"],"od":[0,1,3]}|] (transformRight [s|{"p":["baz863",2],"ld":2}|] [s|{"p":["baz863"],"od":[0,1,2,3]}|])
+
     it "converts ops on replaced elements to noops" $ do
       shouldBe' [s|{}|] (transformLeft [s|{"p":[1, 0], "si":"hi"}|] [s|{"p":[1], "ld":"x", "li":"y"}|])
       shouldBe' [s|{}|] (transformLeft [s|{"p":[1], "t":"text0", "o":[{"p":0, "i":"hi"}]}|] [s|{"p":[1], "ld":"x", "li":"y"}|])
@@ -175,6 +178,11 @@ specs = do
     it "changes deleted data to reflect edits" $ do
       shouldBe' [s|{"p":[1], "ld":"abc"}|] (transformLeft [s|{"p":[1], "ld":"a"}|] [s|{"p":[1, 1], "si":"bc"}|])
       shouldBe' [s|{"p":[1], "ld":"abc"}|] (transformLeft [s|{"p":[1], "ld":"a"}|] [s|{"p":[1], "t":"text0", "o":[{"p":1, "i":"bc"}]}|])
+
+    it "doesn't confuse unrelated operations" $ do
+      let op1 = [s|{"p":["foo736"],"oi":null}|]
+      let op2 = [s|{"p":["foo78",1],"ld":null}|]
+      shouldBe' (op1, op2) (transform op1 op2)
 
     it "Puts the left op first if two inserts are simultaneous" $ do
       shouldBe' [s|{"p":[1], "li":"a"}|] (transformLeft [s|{"p":[1], "li":"a"}|] [s|{"p":[1], "li":"b"}|])

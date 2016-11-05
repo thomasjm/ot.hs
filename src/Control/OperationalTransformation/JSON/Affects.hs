@@ -79,11 +79,9 @@ affects (getObjectPathAndKey -> Just (path1, key1)) (getObjectPathAndKey -> Just
 -- affects ((\x -> getFullPath <$> getObject x) -> Just path1) ((\x -> getFullPath <$> getObject x) -> Just path2) = path1 `isPrefixOf` path2
 
 -- Object*/Anything: other operations are only affected if the path is a prefix
-affects (ObjectInsert path1 key val) (getPath -> path2) = path1 `isPrefixOf` path2
-affects (ObjectDelete path1 (Just key) val) (getPath -> path2) = (path1 ++ [Prop key]) `isPrefixOf` path2
-affects (ObjectDelete path1 Nothing val) (getPath -> path2) = path1 `isPrefixOf` path2
-affects (ObjectReplace path1 (Just key) old new) (getPath -> path2) = (path1 ++ [Prop key]) `isPrefixOf` path2
-affects (ObjectReplace path1 Nothing old new) (getPath -> path2) = path1 `isPrefixOf` path2
+affects op1@(ObjectInsert {}) (getFullPath -> path2) = (getFullPath op1) `isPrefixOf` path2
+affects op1@(ObjectDelete {}) (getFullPath -> path2) = (getFullPath op1) `isPrefixOf` path2
+affects op1@(ObjectReplace {}) (getPath -> path2) = (getFullPath op1) `isPrefixOf` path2
 
 -- String*/String*
 affects (StringInsert path1 pos1 s1) (StringInsert path2 pos2 s2) = path1 == path2 && pos1 <= pos2
