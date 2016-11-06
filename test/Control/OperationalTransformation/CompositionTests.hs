@@ -18,6 +18,7 @@ import Test.QuickCheck.Property
 import Test.Tasty
 import Test.Tasty.QuickCheck hiding (reason)
 
+
 document = [v|[{}, null, "z"]|]
 o1 = [l|[{"p":[2],"li":"aa"},{"p":[2,0],"si":"bbb"}]|]
 o2 = [l|[{"p":[2,0],"si":"cccc"}]|]

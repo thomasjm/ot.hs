@@ -5,8 +5,8 @@ module Control.OperationalTransformation.JSON.Util where
 import Control.OperationalTransformation.JSON.Types
 import Control.OperationalTransformation.Text0
 import Data.Aeson as A
+import Data.List
 import Data.String.Interpolate.IsString
-
 
 inc :: PathSegment -> PathSegment
 inc = add 1
@@ -129,6 +129,12 @@ isListInsert _ = False
 isListMove (ListMove {}) = True
 isListMove _ = False
 
+isListOp (ListInsert {}) = True
+isListOp (ListDelete {}) = True
+isListOp (ListReplace {}) = True
+isListOp (ListMove {}) = True
+isListOp _ = False
+
 isStringOp (StringInsert {}) = True
 isStringOp (StringDelete {}) = True
 isStringOp _ = False
@@ -190,3 +196,6 @@ toJSONOp _ op = error [i|Can't convert this op to JSONOp: #{op}|]
 
 toJSONOperation :: Path -> Text0Operation -> JSONOperation
 toJSONOperation path (T0 ops) = JSONOperation (map (toJSONOp path) ops)
+
+
+isStrictPrefixOf x y = (x `isPrefixOf` y) && (length x < length y)

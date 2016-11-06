@@ -75,20 +75,22 @@ transformRight op1@(ListMove path1 index11 index12) op2@(ListInsert path2 index2
      | index2 <= (min index11 index12) -> Right op2
      -- If the ListInsert is at or after the larger index of the ListMove, it's not affected. TODO: cover this in `affects`
      | index2 >= (max index11 index12) -> Right op2
--- ListMove/Anything -- TODO: make this on the same list
-transformRight (ListMove listPath1 listIndex1 listIndex2) op2@(((\x -> unsafeIndex "B" x (length listPath1)) . getFullPath) -> Pos i)
-  | i == listIndex1 = Right $ replaceIndex op2 (length listPath1) listIndex2
-  -- in between
-  | listIndex1 <= i && i <= listIndex2 = Right $ replaceIndex op2 (length listPath1) (i - 1)
-  | listIndex2 <= i && i <= listIndex1 = Right $ replaceIndex op2 (length listPath1) (i + 1)
-  | otherwise = Right op2
+-- ListMove/Anything on same list or child thereof
+transformRight (ListMove listPath1 listIndex1 listIndex2) op2 | listPath1 `isStrictPrefixOf` (getFullPath op2)
+                                                              , Pos i <- unsafeIndex "B" (getFullPath op2) (length listPath1) =
+  if | i == listIndex1 -> Right $ replaceIndex op2 (length listPath1) listIndex2
+     -- in between
+     | listIndex1 <= i && i <= listIndex2 -> Right $ replaceIndex op2 (length listPath1) (i - 1)
+     | listIndex2 <= i && i <= listIndex1 -> Right $ replaceIndex op2 (length listPath1) (i + 1)
+     | otherwise -> Right op2
 
 -- ListDelete/ListReplace on the same list: a delete affecting a replace turns into an insert.
 transformRight op1@(ListDelete path1 index1 value1) op2@(ListReplace path2 index2 old new)
   | path1 == path2 && index1 == index2 = Right $ ListInsert path2 index2 new
 
 -- ListInsert/Anything
-transformRight op1@(ListInsert listPath _ val) op2 = Right $ replaceIndexFn op2 (length listPath) (+ 1)
+transformRight op1@(ListInsert listPath _ val) op2
+  | listPath `isStrictPrefixOf` (getFullPath op2) = Right $ replaceIndexFn op2 (length listPath) (+ 1)
 
 -- ListDelete/ListInsert at same index: ListInsert is unchanged
 transformRight op1@(ListDelete path1 index1 val1) op2@(ListInsert path2 index2 val2)

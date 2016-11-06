@@ -15,11 +15,12 @@ import Data.String.Interpolate.IsString
 -- a) an element in the list pointed to by listPath, or
 -- b) a child of such an element
 -- In either case, returns the index in the list pointed to by listPath
-getIndexInList listPath op | (length listPath) < (length path) = unPos (path !! (length listPath))
-  where path = getFullPath op
-getIndexInList listPath op = error [i|Failed to getIndexInList (this shouldn't happen):
+getIndexInList op1 listPath op2 | (length listPath) < (length path) = unPos (path !! (length listPath))
+  where path = getFullPath op2
+getIndexInList op1 listPath op2 = error [i|Failed to getIndexInList (this shouldn't happen):
 list = #{encode listPath},
-op = #{encode op}|]
+op1 = #{encode op1},
+op2 = #{encode op2}|]
 
 -- Define x `affects` y if operation x affects operation y
 affects :: JSONOp -> JSONOp -> Bool
@@ -38,21 +39,23 @@ affects (ListDelete path1 index1 value1) (ListMove path2 index21 index22)
 affects (ListInsert path1 index1 value1) (ListMove path2 index21 index22)
   | path1 == path2 = index1 <= (max index21 index22)
 -- ListDelete/Anything
-affects (ListDelete listPath listIndex value) op | path <- getPath op
-                                                 , listPath `isPrefixOf` path
-                                                 , index <- getIndexInList listPath op = index >= listIndex
+affects op1@(ListDelete listPath listIndex value) op2 | path <- getPath op2
+                                                      , listPath `isPrefixOf` path
+                                                      , index <- getIndexInList op1 listPath op2
+  = index >= listIndex
 
 -- ListInsert/ListDelete
 affects op1@(ListInsert path1 index1 val1) (ListDelete path2 index2 val2) | path1 == path2 = index1 <= index2
 -- ListInsert/Anything
-affects (ListInsert listPath listIndex value) op | path <- getPath op
-                                                 , listPath `isPrefixOf` path
-                                                 , index <- getIndexInList listPath op = index >= listIndex
+affects op1@(ListInsert listPath listIndex value) op2 | path <- getPath op2
+                                                      , listPath `isPrefixOf` path
+                                                      , index <- getIndexInList op1 listPath op2
+  = index >= listIndex
 
 -- ListReplace/Anything
-affects (ListReplace listPath listIndex old new) op | path <- getPath op
-                                                    , listPath `isPrefixOf` path
-                                                    = listIndex == getIndexInList listPath op
+affects op1@(ListReplace listPath listIndex old new) op2 | path <- getPath op2
+                                                         , listPath `isPrefixOf` path
+  = listIndex == getIndexInList op1 listPath op2
 
 -- ListMove/ListMove (operating on same list)
 affects (ListMove listPath1 listIndex11 listIndex12) (ListMove listPath2 listIndex21 listIndex22)
@@ -61,8 +64,9 @@ affects (ListMove listPath1 listIndex11 listIndex12) (ListMove listPath2 listInd
   -- where inRange x = (x >= (min listIndex11 listIndex12)) && (x <= (max listIndex11 listIndex12))
 
 -- ListMove/Anything
-affects (ListMove listPath listIndex1 listIndex2) op | listPath `isPrefixOf` (getFullPath op)
-                                                     , index <- getIndexInList listPath op
+affects op1@(ListMove listPath listIndex1 listIndex2) op2 | listPath `isPrefixOf` (getFullPath op2)
+                                                     , index <- getIndexInList op1 listPath op2
+                                                     , listPath /= (getFullPath op2) -- Important that the second op isn't something like ObjectReplace on the list
                                                      = inRange index
   where inRange x = (x >= (min listIndex1 listIndex2)) && (x <= (max listIndex1 listIndex2))
 
